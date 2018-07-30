@@ -1,3 +1,8 @@
+.idea/
+spider/.idea/
+spider/venv/
+spider/IPProxyPool/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
