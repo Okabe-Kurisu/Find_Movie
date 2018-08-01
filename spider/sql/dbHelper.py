@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 from sqlalchemy.orm import sessionmaker, relationship, mapper
-from config import config
+import config
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine, Table
 from sqlalchemy import Column, String, Integer, Text, Float, ForeignKey
 import traceback
 
-conn_url = 'mysql+pymysql://' + config['mysql_username'] + ':' + config['mysql_passwd'] + '@' + config[
-    'mysql_host'] + '/' + config['mysql_dbname'] + '?charset=utf8'
+conn_url = 'mysql+pymysql://' + config.mysql_username + ':' + config.mysql_passwd + '@' + config.mysql_host + '/' + \
+           config.mysql_dbname + '?charset=utf8'
 engine = create_engine(conn_url, pool_size=100)
 DBSession = sessionmaker(bind=engine)
 Base = declarative_base()
@@ -15,8 +15,7 @@ Base = declarative_base()
 
 class Movie(Base):  # 电影表，记录电影的各种信息
     __tablename__ = 'movie'
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    douban_id = Column(String(10), nullable=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)  # 豆瓣id就是唯一id
     imdb_id = Column(String(10))
     name = Column(String(57), nullable=True)  # 57据说是世界上最长的电影名长度
     original_name = Column(String(100))  # 非中文名
@@ -45,7 +44,7 @@ class Movie(Base):  # 电影表，记录电影的各种信息
         return d
 
     def save(self, session):
-        session.add(self)
+        session.merge(self)
         session.commit()
 
     def update(self, session):
@@ -53,8 +52,8 @@ class Movie(Base):  # 电影表，记录电影的各种信息
         session.commit()
 
     @staticmethod
-    def query_by_douban_id(did, session):  # 检查是否重复保存了数据， 如果有就返回真
-        movie = session.query(Movie).filter(Movie.douban_id == did).first()
+    def query_by_id(id, session):  # 检查是否重复保存了数据， 如果有就返回真
+        movie = session.query(Movie).filter(Movie.id == id).first()
         return movie
 
     def query_all_filmmaker(self, session):
@@ -94,7 +93,7 @@ class Filmman_movie(Base):
     role = Column(Integer, default=0)
 
     def save(self, session):
-        session.add(self)
+        session.merge(self)
         session.commit()
 
     def row2dict(self):
@@ -104,12 +103,12 @@ class Filmman_movie(Base):
         return d
 
     def update(self, session):
-        session.query(Filmman_movie).\
+        session.query(Filmman_movie). \
             filter(Filmman_movie.id == self.id).update(self.row2dict(), synchronize_session='fetch')
         session.commit()
 
     def query_by_fidandmid(self, session):
-        fm = session.query(Filmman_movie)\
+        fm = session.query(Filmman_movie) \
             .filter(Filmman_movie.mid == self.mid and Filmman_movie.fid == self.fid).first()
         return fm
 
@@ -117,7 +116,6 @@ class Filmman_movie(Base):
 class Filmman(Base):  # 影人表，记录导演演员编剧的信息
     __tablename__ = 'filmman'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    douban_id = Column(String(10), nullable=True)
     name = Column(String(20), nullable=True)
     name_en = Column(String(50))
     aka = Column(String(20))
@@ -147,8 +145,8 @@ class Filmman(Base):  # 影人表，记录导演演员编剧的信息
         return filmmaker
 
     @staticmethod
-    def query_by_douban_id(did, session):
-        filmmaker = session.query(Filmman).filter(Filmman.douban_id == did).first()
+    def query_by_id(id, session):
+        filmmaker = session.query(Filmman).filter(Filmman.id == id).first()
         return filmmaker
 
     @staticmethod
@@ -183,7 +181,6 @@ class Tag(Base):  # 电影标签
     def save(self, session):
         session.add(self)
         session.commit()
-
 
     @staticmethod
     def query_by_id(id, session):
