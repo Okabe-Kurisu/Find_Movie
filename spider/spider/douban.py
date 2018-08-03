@@ -3,6 +3,7 @@ import json
 from aiohttp import ClientSession, ClientOSError
 from lxml import etree
 from spider import spider_config as config
+from util.proxy import get_proxy, del_proxy
 
 
 # 得到豆瓣搜索页面的json列表，返回
@@ -28,6 +29,7 @@ class Douban(object):
         self.range = range
         self.sort = sort
         self.genres = genres
+        self.proxy = get_proxy()
 
     def get_params(self):
         params = {
@@ -47,27 +49,34 @@ class Douban(object):
         return "http://" + str(self.proxy[0]) + ':' + str(self.proxy[1])
 
     # 初始化cookie
-    def init(self, p):
+    def init(self):
         self.cookie = config.get_cookie()
         self.header = config.get_header()
-        self.proxy = p
+        del_proxy(self.proxy)
+        self.proxy = get_proxy()
 
     # 得到搜索列表页面的url
     async def get_tpye_list(self):
         async with ClientSession(cookies=self.cookie, headers=self.header) as session:
             async with session.get(self.list_url, params=self.get_params(),
-                                   timeout=20) as resp:
-                assert resp.status == 200
+                                   proxy="http://" + str(self.proxy[0]) + ":" + str(self.proxy[1]),
+                                   timeout=10) as resp:
                 pages = json.loads(await resp.text())['data']
                 if len(pages) == 0:
                     raise RuntimeWarning("该分类已经全部获取完毕")
                 else:
+                    self.start += 20
                     return pages
 
-        async def get_subject(self, url):
-            async with ClientSession(cookies=self.cookie, headers=self.header, timeout=10) as session:
-                async with session.get(url, params=self.get_params(), proxy=self.get_proxy(), timeout=10) as resp:
-                    assert await resp.status == 200
-                    html = etree.parse(resp.text())
-                    html.xpath()
-                    # todo 解析网页
+    async def get_subject(self, jsons):
+        for json in jsons:
+            print(json['url'])
+        async with ClientSession(cookies=self.cookie, headers=self.header) as session:
+            async with session.get(url, params=self.get_params(),
+                                   proxy="http://" + str(self.proxy[0]) + ":" + str(self.proxy[1]),
+                                   timeout=10) as resp:
+                html = await resp.text()
+                print(html)
+                html = etree.parse(html)
+                html.xpath()
+                # todo 解析网页

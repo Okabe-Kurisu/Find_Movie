@@ -1,10 +1,9 @@
 import asyncio
-import traceback
+from json import JSONDecodeError
 
-from aiohttp import ClientOSError
-
+from aiohttp import ClientOSError, ClientHttpProxyError
+from concurrent.futures._base import TimeoutError
 from spider.douban import Douban
-from util import proxy
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
@@ -12,14 +11,10 @@ if __name__ == "__main__":
     while True:
         json = ""
         try:
-            p = loop.run_until_complete(proxy.get_proxy())
-            douban.init(p)
-            print(douban.get_params())
+            print("http://" + str(douban.proxy[0]) + ":" + str(douban.proxy[1]))
             json = loop.run_until_complete(douban.get_tpye_list())
-        except ClientOSError:  # 如果被停止了连接
-            traceback.print_exc()
-            loop.run_until_complete(proxy.del_proxy(douban.proxy[0]))
-            p = loop.run_until_complete(proxy.get_proxy())
-            douban.init(p)
-        print(json)
+            loop.run_until_complete(douban.get_subject(json))
+        except Exception:  # 如果被停止了连接
+            print("豆瓣太狡猾")
+            douban.init()
     loop.close()
