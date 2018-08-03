@@ -3,6 +3,7 @@ import json
 from aiohttp import ClientSession, ClientOSError
 from lxml import etree
 from spider import spider_config as config
+from sql.dbHelper import Movie, Filmman, Tag
 from util.proxy import get_proxy, del_proxy
 
 
@@ -17,9 +18,11 @@ from util.proxy import get_proxy, del_proxy
 class Douban(object):
     base_url = 'https://movie.douban.com/'
     list_url = base_url + 'j/new_search_subjects'
+    api_url = 'https://api.douban.com/v2/movie/subject/'
 
     # 初始化时自动得到header和cookie
-    def __init__(self, proxy="", tag="", start=0, range="0,10", sort='S', genres='剧情'):
+    def __init__(self, session, proxy="", tag="", start=0, range="0,10", sort='S', genres='剧情'):
+        self.session = session
         self.header = config.get_header()
         self.cookie = config.get_cookie()
         self.proxy = proxy
@@ -38,7 +41,7 @@ class Douban(object):
             # 评分范围
             'range': self.range,
             # 标签, 后面跟的应该是用户自定义的标签
-            'tag': '电影' + self.tag,
+            'tags': '电影' + self.tag,
             'start': self.start,
             # 电影类型，具体可见spider_config.py中
             'genres': self.genres,
@@ -70,13 +73,51 @@ class Douban(object):
 
     async def get_subject(self, jsons):
         for json in jsons:
-            print(json['url'])
-        async with ClientSession(cookies=self.cookie, headers=self.header) as session:
-            async with session.get(url, params=self.get_params(),
-                                   proxy="http://" + str(self.proxy[0]) + ":" + str(self.proxy[1]),
-                                   timeout=10) as resp:
-                html = await resp.text()
-                print(html)
-                html = etree.parse(html)
-                html.xpath()
-                # todo 解析网页
+            url = str(json['url'])
+            id = url.split("/")[-1]
+            # 可能会要更新数据，还是不要跳过任何一个数据了
+            # if Movie.query_by_id(id, self.session) is not None:
+            #     continue
+            movie = Movie(id=id)
+            async with ClientSession(cookies=self.cookie, headers=self.header) as session:
+                async with session.get(self.api_url + id, params=self.get_params(),
+                                       proxy="http://" + str(self.proxy[0]) + ":" + str(self.proxy[1]),
+                                       timeout=10) as resp:
+                    html = await resp.text()
+                    subject_json = json.loads(html)
+                    movie.name = subject_json['title']
+                    movie.original_name = subject_json['original_title']
+                    movie.poster = subject_json['images']['large']
+                    movie.released = int(subject_json['year'])
+                    movie.country = subject_json['countries']
+                    movie.douban_rating = subject_json['rating']['average']
+                    movie.douban_votes = subject_json['ratings_count']
+                    movie.polt = subject_json['summary']
+                    movie.save(session)
+                    if 'casts' in subject_json:
+                        for man in subject_json['casts']:
+                            filmman = Filmman(id=man['id'], name=man['name'])
+                            filmman.save(session)
+                            movie.append_filmman(filmman, Filmman.Role_Actor, session)
+                    if 'directors' in subject_json:
+                        for man in subject_json['directors']:
+                            filmman = Filmman(id=man['id'], name=man['name'])
+                            filmman.save(session)
+                            movie.append_filmman(filmman, Filmman.Role_Director, session)
+                    if 'writers' in subject_json:
+                        for man in subject_json['writers']:
+                            filmman = Filmman(id=man['id'], name=man['name'])
+                            filmman.save(session)
+                            movie.append_filmman(filmman, Filmman.Role_Writer, session)
+            # 得到标签数据
+            async with ClientSession(cookies=self.cookie, headers=self.header) as session:
+                async with session.get(url, params=self.get_params(),
+                                       proxy="http://" + str(self.proxy[0]) + ":" + str(self.proxy[1]),
+                                       timeout=10) as resp:
+                    html = await resp.text()
+                    html = etree.parse(html)
+                    tags = html.xpath('//*[@id="content"]/div[3]/div[2]/div[5]/div/a/text()')
+                    for x in tags:
+                        tag = Tag(name=x)
+                        tag.save(session)
+                        movie.append_tag(tag, session)

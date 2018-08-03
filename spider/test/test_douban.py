@@ -4,10 +4,12 @@ from json import JSONDecodeError
 from aiohttp import ClientOSError, ClientHttpProxyError
 from concurrent.futures._base import TimeoutError
 from spider.douban import Douban
+from sql.dbHelper import DBSession
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
-    douban = Douban()
+    session = DBSession()
+    douban = Douban(session)
     while True:
         json = ""
         try:

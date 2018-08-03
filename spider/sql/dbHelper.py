@@ -20,14 +20,13 @@ class Movie(Base):  # 电影表，记录电影的各种信息
     name = Column(String(57), nullable=True)  # 57据说是世界上最长的电影名长度
     original_name = Column(String(100))  # 非中文名
     poster = Column(String(100), default='no pic')  # 海报地址
-    writers = Column(String(100))  # 编剧们
     released = Column(String(10))  # 发行年份
     country = Column(String(20))  # 制片国家
-    runtime = Column(String(5))  # 电影时长
-    language = Column(String(70))  # 发行语言
+    runtime = Column(String(5))  # 电影时长 omdb获得
+    language = Column(String(70))  # 发行语言 omdb获得
     douban_rating = Column(Float)
     douban_votes = Column(Integer)  # 豆瓣评分人数
-    imdb_rating = Column(Float)
+    imdb_rating = Column(Float)  # omdb获得
     imdb_votes = Column(Integer)  # imdb评分人数
     polt = Column(Text)  # 剧情介绍
     filmmans = relationship('Filmman'
@@ -52,7 +51,7 @@ class Movie(Base):  # 电影表，记录电影的各种信息
         session.commit()
 
     @staticmethod
-    def query_by_id(id, session):  # 检查是否重复保存了数据， 如果有就返回真
+    def query_by_id(id, session):  # 检查是否重复保存了数据
         movie = session.query(Movie).filter(Movie.id == id).first()
         return movie
 
@@ -107,7 +106,7 @@ class Filmman_movie(Base):
             filter(Filmman_movie.id == self.id).update(self.row2dict(), synchronize_session='fetch')
         session.commit()
 
-    def query_by_fidandmid(self, session):
+    def query_by_fidmid(self, session):
         fm = session.query(Filmman_movie) \
             .filter(Filmman_movie.mid == self.mid and Filmman_movie.fid == self.fid).first()
         return fm
