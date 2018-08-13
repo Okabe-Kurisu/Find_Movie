@@ -21,7 +21,7 @@ class Movie(Base):  # 电影表，记录电影的各种信息
     original_name = Column(String(100))  # 非中文名
     poster = Column(String(100), default='no pic')  # 海报地址
     released = Column(String(10))  # 发行年份
-    country = Column(String(20))  # 制片国家
+    country = Column(String(50))  # 制片国家
     runtime = Column(String(5))  # 电影时长 omdb获得
     language = Column(String(70))  # 发行语言 omdb获得
     douban_rating = Column(Float)
@@ -65,21 +65,17 @@ class Movie(Base):  # 电影表，记录电影的各种信息
 
     def append_filmman(self, filmman, role, session):
         fm = Filmman_movie(fid=filmman.id, mid=self.id, role=role)
-        temp = fm.query_by_fidandmid(session)
-        if temp is not None:
-            fm = temp
-            fm.role += role
-            fm.update(session)
-        else:
-            fm.save(session)
+        fm.query_by_fidmid(session)
+        fm.save(session)
         session.commit()
 
     def append_tag(self, tag, session):
         tags = self.query_all_tag(session)
         for t in tags:
             if t.id == tag.id:
-                raise RuntimeError('该标签已经添加过了')
+                return
         self.tags.append(tag)
+        self.save(session)
         session.commit()
 
 
@@ -115,7 +111,7 @@ class Filmman_movie(Base):
 class Filmman(Base):  # 影人表，记录导演演员编剧的信息
     __tablename__ = 'filmman'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(20), nullable=True)
+    name = Column(String(50), nullable=True)
     name_en = Column(String(50))
     aka = Column(String(20))
     aka_en = Column(String(50))
@@ -135,7 +131,7 @@ class Filmman(Base):  # 影人表，记录导演演员编剧的信息
         return d
 
     def save(self, session):
-        session.add(self)
+        session.merge(self)
         session.commit()
 
     @staticmethod
@@ -169,7 +165,7 @@ Tag_movie_table = Table('tag_movie', Base.metadata,
 class Tag(Base):  # 电影标签
     __tablename__ = 'tag'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(5), nullable=True)
+    name = Column(String(50), nullable=True)
 
     def row2dict(self):
         d = {}
@@ -178,8 +174,12 @@ class Tag(Base):  # 电影标签
         return d
 
     def save(self, session):
-        session.add(self)
+        temp = Tag.query_by_name(self.name, session)
+        if temp is not None:
+            return temp
+        session.merge(self)
         session.commit()
+        return self
 
     @staticmethod
     def query_by_id(id, session):
@@ -195,6 +195,23 @@ class Tag(Base):  # 电影标签
         tag = session.query(Tag).filter(Tag.id == self.id).first()
         movies = tag.movies
         return movies
+
+
+# 进度表
+class Progress(Base):
+    __tablename__ = 'progress'
+    id = Column(Integer, primary_key=True)
+    start = Column(Integer)
+    genres = Column(Integer)
+
+    def save(self, session):
+        session.merge(self)
+        session.commit()
+
+    @staticmethod
+    def load(session):
+        progress = session.query(Progress).filter(Progress.id == 1).first()
+        return progress
 
 
 def init_DB():

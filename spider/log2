@@ -1,0 +1,249 @@
+Traceback (most recent call last):
+  File "E:/code/Python/Movie/spider/run.py", line 22, in <module>
+    filmlist = loop.run_until_complete(spider.get_tpye_list())
+  File "C:\Users\84408\AppData\Local\Programs\Python\Python36\lib\asyncio\base_events.py", line 467, in run_until_complete
+    return future.result()
+  File "E:\code\Python\Movie\spider\spider\spider.py", line 79, in get_tpye_list
+    timeout=10) as resp:
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\client.py", line 843, in __aenter__
+    self._resp = await self._coro
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\client.py", line 465, in _request
+    break
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\helpers.py", line 677, in __exit__
+    raise asyncio.TimeoutError from None
+concurrent.futures._base.TimeoutError
+Traceback (most recent call last):
+  File "E:/code/Python/Movie/spider/run.py", line 22, in <module>
+    filmlist = loop.run_until_complete(spider.get_tpye_list())
+  File "C:\Users\84408\AppData\Local\Programs\Python\Python36\lib\asyncio\base_events.py", line 467, in run_until_complete
+    return future.result()
+  File "E:\code\Python\Movie\spider\spider\spider.py", line 81, in get_tpye_list
+    assert resp.status == 200, "失败，理由如下{}".format(await resp.text())
+AssertionError: 失败，理由如下<html>
+<head><title>403 Forbidden</title></head>
+<body bgcolor="white">
+<center><h1>403 Forbidden</h1></center>
+<hr><center>nginx</center>
+</body>
+</html>
+<!-- a padding to disable MSIE and Chrome friendly error page -->
+<!-- a padding to disable MSIE and Chrome friendly error page -->
+<!-- a padding to disable MSIE and Chrome friendly error page -->
+<!-- a padding to disable MSIE and Chrome friendly error page -->
+<!-- a padding to disable MSIE and Chrome friendly error page -->
+<!-- a padding to disable MSIE and Chrome friendly error page -->
+
+Traceback (most recent call last):
+  File "E:/code/Python/Movie/spider/run.py", line 22, in <module>
+    filmlist = loop.run_until_complete(spider.get_tpye_list())
+  File "C:\Users\84408\AppData\Local\Programs\Python\Python36\lib\asyncio\base_events.py", line 467, in run_until_complete
+    return future.result()
+  File "E:\code\Python\Movie\spider\spider\spider.py", line 79, in get_tpye_list
+    timeout=10) as resp:
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\client.py", line 843, in __aenter__
+    self._resp = await self._coro
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\client.py", line 366, in _request
+    timeout=timeout
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\connector.py", line 445, in connect
+    proto = await self._create_connection(req, traces, timeout)
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\connector.py", line 754, in _create_connection
+    req, traces, timeout)
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\connector.py", line 946, in _create_proxy_connection
+    headers=resp.headers)
+aiohttp.client_exceptions.ClientHttpProxyError: 400, message='Bad Request'
+Traceback (most recent call last):
+  File "E:/code/Python/Movie/spider/run.py", line 22, in <module>
+    filmlist = loop.run_until_complete(spider.get_tpye_list())
+  File "C:\Users\84408\AppData\Local\Programs\Python\Python36\lib\asyncio\base_events.py", line 467, in run_until_complete
+    return future.result()
+  File "E:\code\Python\Movie\spider\spider\spider.py", line 79, in get_tpye_list
+    timeout=10) as resp:
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\client.py", line 843, in __aenter__
+    self._resp = await self._coro
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\client.py", line 387, in _request
+    await resp.start(conn)
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\client_reqrep.py", line 761, in start
+    self._continue = None
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\helpers.py", line 677, in __exit__
+    raise asyncio.TimeoutError from None
+concurrent.futures._base.TimeoutError
+Traceback (most recent call last):
+  File "E:/code/Python/Movie/spider/run.py", line 22, in <module>
+    filmlist = loop.run_until_complete(spider.get_tpye_list())
+  File "C:\Users\84408\AppData\Local\Programs\Python\Python36\lib\asyncio\base_events.py", line 467, in run_until_complete
+    return future.result()
+  File "E:\code\Python\Movie\spider\spider\spider.py", line 79, in get_tpye_list
+    timeout=10) as resp:
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\client.py", line 843, in __aenter__
+    self._resp = await self._coro
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\client.py", line 366, in _request
+    timeout=timeout
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\connector.py", line 445, in connect
+    proto = await self._create_connection(req, traces, timeout)
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\connector.py", line 754, in _create_connection
+    req, traces, timeout)
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\connector.py", line 946, in _create_proxy_connection
+    headers=resp.headers)
+aiohttp.client_exceptions.ClientHttpProxyError: 400, message='Bad Request'
+Traceback (most recent call last):
+  File "E:/code/Python/Movie/spider/run.py", line 22, in <module>
+    filmlist = loop.run_until_complete(spider.get_tpye_list())
+  File "C:\Users\84408\AppData\Local\Programs\Python\Python36\lib\asyncio\base_events.py", line 467, in run_until_complete
+    return future.result()
+  File "E:\code\Python\Movie\spider\spider\spider.py", line 79, in get_tpye_list
+    timeout=10) as resp:
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\client.py", line 843, in __aenter__
+    self._resp = await self._coro
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\client.py", line 465, in _request
+    break
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\helpers.py", line 677, in __exit__
+    raise asyncio.TimeoutError from None
+concurrent.futures._base.TimeoutError
+Traceback (most recent call last):
+  File "E:/code/Python/Movie/spider/run.py", line 22, in <module>
+    filmlist = loop.run_until_complete(spider.get_tpye_list())
+  File "C:\Users\84408\AppData\Local\Programs\Python\Python36\lib\asyncio\base_events.py", line 467, in run_until_complete
+    return future.result()
+  File "E:\code\Python\Movie\spider\spider\spider.py", line 79, in get_tpye_list
+    timeout=10) as resp:
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\client.py", line 843, in __aenter__
+    self._resp = await self._coro
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\client.py", line 465, in _request
+    break
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\helpers.py", line 677, in __exit__
+    raise asyncio.TimeoutError from None
+concurrent.futures._base.TimeoutError
+Traceback (most recent call last):
+  File "E:/code/Python/Movie/spider/run.py", line 22, in <module>
+    filmlist = loop.run_until_complete(spider.get_tpye_list())
+  File "C:\Users\84408\AppData\Local\Programs\Python\Python36\lib\asyncio\base_events.py", line 467, in run_until_complete
+    return future.result()
+  File "E:\code\Python\Movie\spider\spider\spider.py", line 81, in get_tpye_list
+    assert resp.status == 200, "失败，理由如下{}".format(await resp.text())
+AssertionError: 失败，理由如下检测到有异常请求从你的 IP 发出，请 <a href="https://www.douban.com/accounts/login?redir=https%3A%2F%2Fmovie.douban.com%2Fj%2Fnew_search_subjects%3Fsort%3DS%26range%3D0%2C10%26tags%3D%25E7%2594%25B5%25E5%25BD%25B1%26start%3D21%26genres%3D%25E5%2589%25A7%25E6%2583%2585">登录</a> 使用豆瓣。
+
+Traceback (most recent call last):
+  File "E:/code/Python/Movie/spider/run.py", line 22, in <module>
+    filmlist = loop.run_until_complete(spider.get_tpye_list())
+  File "C:\Users\84408\AppData\Local\Programs\Python\Python36\lib\asyncio\base_events.py", line 467, in run_until_complete
+    return future.result()
+  File "E:\code\Python\Movie\spider\spider\spider.py", line 79, in get_tpye_list
+    timeout=10) as resp:
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\client.py", line 843, in __aenter__
+    self._resp = await self._coro
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\client.py", line 465, in _request
+    break
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\helpers.py", line 677, in __exit__
+    raise asyncio.TimeoutError from None
+concurrent.futures._base.TimeoutError
+Traceback (most recent call last):
+  File "E:/code/Python/Movie/spider/run.py", line 22, in <module>
+    filmlist = loop.run_until_complete(spider.get_tpye_list())
+  File "C:\Users\84408\AppData\Local\Programs\Python\Python36\lib\asyncio\base_events.py", line 467, in run_until_complete
+    return future.result()
+  File "E:\code\Python\Movie\spider\spider\spider.py", line 81, in get_tpye_list
+    assert resp.status == 200, "失败，理由如下{}".format(await resp.text())
+AssertionError: 失败，理由如下检测到有异常请求从你的 IP 发出，请 <a href="https://www.douban.com/accounts/login?redir=https%3A%2F%2Fmovie.douban.com%2Fj%2Fnew_search_subjects%3Fsort%3DS%26range%3D0%2C10%26tags%3D%25E7%2594%25B5%25E5%25BD%25B1%26start%3D21%26genres%3D%25E5%2589%25A7%25E6%2583%2585">登录</a> 使用豆瓣。
+
+Traceback (most recent call last):
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\client_reqrep.py", line 748, in start
+    message, payload = await self._protocol.read()
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\streams.py", line 533, in read
+    await self._waiter
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\client_proto.py", line 195, in data_received
+    messages, upgraded, tail = self._parser.feed_data(data)
+  File "aiohttp\_http_parser.pyx", line 297, in aiohttp._http_parser.HttpParser.feed_data
+aiohttp.http_exceptions.BadHttpMessage: 400, message='invalid constant string'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "E:/code/Python/Movie/spider/run.py", line 22, in <module>
+    filmlist = loop.run_until_complete(spider.get_tpye_list())
+  File "C:\Users\84408\AppData\Local\Programs\Python\Python36\lib\asyncio\base_events.py", line 467, in run_until_complete
+    return future.result()
+  File "E:\code\Python\Movie\spider\spider\spider.py", line 79, in get_tpye_list
+    timeout=10) as resp:
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\client.py", line 843, in __aenter__
+    self._resp = await self._coro
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\client.py", line 366, in _request
+    timeout=timeout
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\connector.py", line 445, in connect
+    proto = await self._create_connection(req, traces, timeout)
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\connector.py", line 754, in _create_connection
+    req, traces, timeout)
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\connector.py", line 931, in _create_proxy_connection
+    resp = await proxy_resp.start(conn)
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\client_reqrep.py", line 753, in start
+    message=exc.message, headers=exc.headers) from exc
+aiohttp.client_exceptions.ClientResponseError: 400, message='invalid constant string'
+Traceback (most recent call last):
+  File "E:/code/Python/Movie/spider/run.py", line 22, in <module>
+    filmlist = loop.run_until_complete(spider.get_tpye_list())
+  File "C:\Users\84408\AppData\Local\Programs\Python\Python36\lib\asyncio\base_events.py", line 467, in run_until_complete
+    return future.result()
+  File "E:\code\Python\Movie\spider\spider\spider.py", line 81, in get_tpye_list
+    assert resp.status == 200, "失败，理由如下{}".format(await resp.text())
+AssertionError: 失败，理由如下检测到有异常请求从你的 IP 发出，请 <a href="https://www.douban.com/accounts/login?redir=https%3A%2F%2Fmovie.douban.com%2Fj%2Fnew_search_subjects%3Fsort%3DS%26range%3D0%2C10%26tags%3D%25E7%2594%25B5%25E5%25BD%25B1%26start%3D21%26genres%3D%25E5%2589%25A7%25E6%2583%2585">登录</a> 使用豆瓣。
+
+Traceback (most recent call last):
+  File "E:/code/Python/Movie/spider/run.py", line 22, in <module>
+    filmlist = loop.run_until_complete(spider.get_tpye_list())
+  File "C:\Users\84408\AppData\Local\Programs\Python\Python36\lib\asyncio\base_events.py", line 467, in run_until_complete
+    return future.result()
+  File "E:\code\Python\Movie\spider\spider\spider.py", line 79, in get_tpye_list
+    timeout=10) as resp:
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\client.py", line 843, in __aenter__
+    self._resp = await self._coro
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\client.py", line 366, in _request
+    timeout=timeout
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\connector.py", line 445, in connect
+    proto = await self._create_connection(req, traces, timeout)
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\connector.py", line 754, in _create_connection
+    req, traces, timeout)
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\connector.py", line 946, in _create_proxy_connection
+    headers=resp.headers)
+aiohttp.client_exceptions.ClientHttpProxyError: 400, message='Bad Request'
+Traceback (most recent call last):
+  File "E:/code/Python/Movie/spider/run.py", line 23, in <module>
+    loop.run_until_complete(spider.get_subject(filmlist))
+  File "C:\Users\84408\AppData\Local\Programs\Python\Python36\lib\asyncio\base_events.py", line 467, in run_until_complete
+    return future.result()
+  File "E:\code\Python\Movie\spider\spider\spider.py", line 136, in get_subject
+    timeout=10) as resp:
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\client.py", line 843, in __aenter__
+    self._resp = await self._coro
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\client.py", line 387, in _request
+    await resp.start(conn)
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\client_reqrep.py", line 761, in start
+    self._continue = None
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\helpers.py", line 677, in __exit__
+    raise asyncio.TimeoutError from None
+concurrent.futures._base.TimeoutError
+Traceback (most recent call last):
+  File "E:/code/Python/Movie/spider/run.py", line 23, in <module>
+    loop.run_until_complete(spider.get_subject(filmlist))
+  File "C:\Users\84408\AppData\Local\Programs\Python\Python36\lib\asyncio\base_events.py", line 467, in run_until_complete
+    return future.result()
+  File "E:\code\Python\Movie\spider\spider\spider.py", line 142, in get_subject
+    raise RuntimeWarning("得到了{}的标签数据获取失败".format(movie.name))
+RuntimeWarning: 得到了茶馆的标签数据获取失败
+Traceback (most recent call last):
+  File "E:/code/Python/Movie/spider/run.py", line 23, in <module>
+    loop.run_until_complete(spider.get_subject(filmlist))
+  File "C:\Users\84408\AppData\Local\Programs\Python\Python36\lib\asyncio\base_events.py", line 467, in run_until_complete
+    return future.result()
+  File "E:\code\Python\Movie\spider\spider\spider.py", line 136, in get_subject
+    timeout=10) as resp:
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\client.py", line 843, in __aenter__
+    self._resp = await self._coro
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\client.py", line 387, in _request
+    await resp.start(conn)
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\client_reqrep.py", line 761, in start
+    self._continue = None
+  File "E:\code\Python\Movie\spider\venv\lib\site-packages\aiohttp\helpers.py", line 677, in __exit__
+    raise asyncio.TimeoutError from None
+concurrent.futures._base.TimeoutError
+Traceback (most recent call last):
+  File "E:/code/Python/Movie/spider/run.py", line 23, in <module>
+    loop.run_until_complete(spider.get_subject(filmlist))
