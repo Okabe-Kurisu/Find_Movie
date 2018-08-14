@@ -1,9 +1,10 @@
 import json
 
 import asyncio
+import time
 import traceback
 
-from aiohttp import ClientSession
+from aiohttp import ClientSession, ClientResponseError, ClientOSError, ServerDisconnectedError
 from lxml import etree
 from spider import spider_config as config
 from sql.dbHelper import Movie, Filmman, Tag, Progress
@@ -78,7 +79,7 @@ class Spider(object):
         async with ClientSession(cookies=self.cookie, headers=self.header) as session:
             async with session.get(self.list_url, params=self.get_params(),
                                    proxy=self.get_proxy(),
-                                   timeout=10) as resp:
+                                   timeout=5) as resp:
                 text = await resp.text()
                 assert resp.status == 200, "失败，理由如下{}".format(await resp.text())
                 pages = json.loads(text)['data']
@@ -91,9 +92,10 @@ class Spider(object):
                                                         len(pages)))
                     return pages
 
-    async def get_subject(self, json, num=0):
-        url = str(json['url'])
-        id = str(json['id'])
+    async def get_subject(self, film):
+        start = time.time()
+        url = str(film['url'])
+        id = url.split('/')[-2]
         # 可能会要更新数据，还是不要跳过任何一个数据了
         # if Movie.query_by_id(id, self.session) is not None:
         #     continue
@@ -103,8 +105,10 @@ class Spider(object):
                 async with ClientSession(cookies=self.cookie, headers=self.header) as session:
                     async with session.get(self.api_url + id, params=self.get_params(),
                                            proxy=self.get_proxy(),
-                                           timeout=10) as resp:
+                                           timeout=5) as resp:
                         subject_json = await resp.json()
+                        if resp.status == 404:
+                            return None
                         assert resp.status == 200, "失败，理由如下{}".format(str(await resp.text()))
                         movie.name = subject_json['title']
                         movie.original_name = subject_json['original_title']
@@ -115,7 +119,6 @@ class Spider(object):
                         movie.douban_votes = subject_json['ratings_count']
                         movie.polt = subject_json['summary']
                         movie = movie.save(self.session)
-                        print("得到了{}的基本数据".format(movie.name))
                         if 'casts' in subject_json:
                             for man in subject_json['casts']:
                                 filmman = Filmman(id=man['id'], name=man['name'])
@@ -129,37 +132,43 @@ class Spider(object):
                         good_proxy(self.proxy)
                         self.session.commit()
                         break
-            except:
+            except (TimeoutError, ClientResponseError, ClientOSError, ServerDisconnectedError,
+                    RuntimeWarning):
                 self.init()
                 continue
-        return [movie, url]
+        end = time.time()
+        print("得到了{}的基本数据, 用时{}秒".format(movie.name, (end - start)))
+        return movie
 
-    async def get_tags(self, data, num):
+    async def get_tags(self, movie, url, num):
+        if movie is None:
+            return
+        start = time.time()
         while True:
             try:
                 # 得到标签数据
                 async with ClientSession(cookies=self.cookie, headers=self.header) as session:
-                    async with session.get(data[1], params=self.get_params(),
+                    async with session.get(url, params=self.get_params(),
                                            proxy=self.get_proxy(),
-                                           timeout=10) as resp:
+                                           timeout=5) as resp:
                         html = await resp.text()
                         assert resp.status == 200, "失败，理由如下{}".format(str(await resp.text()))
                         html = etree.HTML(html)
-                        rules = ['//*[@id="content"]/div[4]/div[2]/div[5]/div/a[1]', '//*[@id="content"]/div[2]/div[2]/div[3]/div/a/text()']
-                        tags = []
-                        for rule in rules:
-                            tags = html.xpath(rule)
-                            if len(tags) != 0:
-                                break
+                        tags = html.xpath('//*[@class="tags-body"]/a/text()')
+
+                        if len(tags) == 0:
+                            print(url + "增加标签格式适配")
                         for x_tag in tags:
                             tag = Tag.get_tag(x_tag, self.session)
-                            data[0].append_tag(tag, self.session)
+                            movie.append_tag(tag, self.session)
                         good_proxy(self.proxy)
                         asyncio.sleep(1000)
-                        print("得到了{}的标签数据".format(data[0].name))
-                        self.save_progress(num)  # 存储进度
+                        self.save_progress(num + 1)  # 存储进度
                         self.session.commit()
+                        end = time.time()
+                        print("得到{}的标签数据{}，用时{}秒".format(movie.name, tags, (end - start)))
                         break
-            except:
+            except (TimeoutError, ClientResponseError, ClientOSError, ServerDisconnectedError,
+                    RuntimeWarning):
                 self.init()
                 continue

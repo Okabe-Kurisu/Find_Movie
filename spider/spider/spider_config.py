@@ -4,6 +4,8 @@ import string
 douban_type = ['剧情', '喜剧', '动作', '爱情', '科幻', '悬疑', '惊悚', '恐怖',
                '犯罪', '同性', '音乐', '歌舞', '传记', '历史', '战争', '西部',
                '奇幻', '冒险', '灾难', '武侠', '情色']
+
+
 USER_AGENTS = [
     "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; AcooBrowser; .NET CLR 1.1.4322; .NET CLR 2.0.50727)",
     "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.0; Acoo Browser; SLCC1; .NET CLR 2.0.50727; Media Center PC 5.0; .NET CLR 3.0.04506)",
