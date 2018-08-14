@@ -5,11 +5,14 @@ import traceback
 
 from aiohttp.client_exceptions import ClientResponseError, ClientOSError, ServerDisconnectedError
 from multiprocessing import Value, Queue, Process
+
+from IPProxyPool.IPProxy import Proxy_Pool_Start
 from spider.spider import Spider
 from sql.dbHelper import DBSession
 from concurrent.futures._base import TimeoutError
 
-if __name__ == "__main__":
+
+def run():
     loop = asyncio.get_event_loop()
     session = DBSession()
     spider = Spider(session)
@@ -21,9 +24,14 @@ if __name__ == "__main__":
                 movie = loop.run_until_complete(spider.get_subject(film))
                 loop.run_until_complete(spider.get_tags(movie, str(film['url']), x))
         except (TimeoutError, ClientResponseError, ClientOSError, ServerDisconnectedError,
-                RuntimeWarning):
+                RuntimeWarning, AssertionError):
             spider.init()
             continue
-        except (Exception, AssertionError):
+        except (Exception):
             traceback.print_exc()
+            spider.init()
     loop.close()
+
+
+if __name__ == "__main__":
+    run()

@@ -2,7 +2,6 @@ import json
 
 import asyncio
 import time
-import traceback
 
 from aiohttp import ClientSession, ClientResponseError, ClientOSError, ServerDisconnectedError
 from lxml import etree
@@ -129,11 +128,10 @@ class Spider(object):
                                 filmman = Filmman(id=man['id'], name=man['name'])
                                 filmman.save(self.session)
                                 movie.append_filmman(filmman, Filmman.Role_Director, self.session)
-                        good_proxy(self.proxy)
                         self.session.commit()
                         break
             except (TimeoutError, ClientResponseError, ClientOSError, ServerDisconnectedError,
-                    RuntimeWarning):
+                    RuntimeWarning, AssertionError):
                 self.init()
                 continue
         end = time.time()
@@ -161,7 +159,6 @@ class Spider(object):
                         for x_tag in tags:
                             tag = Tag.get_tag(x_tag, self.session)
                             movie.append_tag(tag, self.session)
-                        good_proxy(self.proxy)
                         asyncio.sleep(1000)
                         self.save_progress(num + 1)  # 存储进度
                         self.session.commit()
@@ -169,6 +166,6 @@ class Spider(object):
                         print("得到{}的标签数据{}，用时{}秒".format(movie.name, tags, (end - start)))
                         break
             except (TimeoutError, ClientResponseError, ClientOSError, ServerDisconnectedError,
-                    RuntimeWarning):
+                    RuntimeWarning, AssertionError):
                 self.init()
                 continue
