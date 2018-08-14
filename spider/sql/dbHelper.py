@@ -9,7 +9,7 @@ import traceback
 conn_url = 'mysql+pymysql://' + config.mysql_username + ':' + config.mysql_passwd + '@' + config.mysql_host + '/' + \
            config.mysql_dbname + '?charset=utf8'
 engine = create_engine(conn_url, pool_size=100)
-DBSession = sessionmaker(bind=engine)
+DBSession = sessionmaker(bind=engine, autocommit=False)
 Base = declarative_base()
 
 
@@ -36,19 +36,12 @@ class Movie(Base):  # 电影表，记录电影的各种信息
                         , secondary='tag_movie'
                         , backref='movies')
 
-    def row2dict(self):
-        d = {}
-        for column in self.__table__.columns:
-            d[column.name] = str(getattr(self, column.name))
-        return d
-
     def save(self, session):
-        session.merge(self)
-        session.commit()
-
-    def update(self, session):
-        session.query(Movie).filter(Movie.id == self.id).update(self.row2dict(), synchronize_session='fetch')
-        session.commit()
+        temp = Movie.query_by_id(self.id, session)
+        if temp is None:
+            session.merge(self)
+            return self
+        return temp
 
     @staticmethod
     def query_by_id(id, session):  # 检查是否重复保存了数据
@@ -65,18 +58,18 @@ class Movie(Base):  # 电影表，记录电影的各种信息
 
     def append_filmman(self, filmman, role, session):
         fm = Filmman_movie(fid=filmman.id, mid=self.id, role=role)
-        fm.query_by_fidmid(session)
         fm.save(session)
-        session.commit()
 
     def append_tag(self, tag, session):
+        temp = Tag.query_by_name(tag.name, session)
+        if temp is not None:
+            tag = temp
         tags = self.query_all_tag(session)
         for t in tags:
             if t.id == tag.id:
                 return
-        self.tags.append(tag)
-        self.save(session)
-        session.commit()
+        tm = Tag_movie(tid=tag.id, mid=self.id)
+        tm.save(session)
 
 
 # 影人与电影关系
@@ -89,18 +82,6 @@ class Filmman_movie(Base):
 
     def save(self, session):
         session.merge(self)
-        session.commit()
-
-    def row2dict(self):
-        d = {}
-        for column in self.__table__.columns:
-            d[column.name] = str(getattr(self, column.name))
-        return d
-
-    def update(self, session):
-        session.query(Filmman_movie). \
-            filter(Filmman_movie.id == self.id).update(self.row2dict(), synchronize_session='fetch')
-        session.commit()
 
     def query_by_fidmid(self, session):
         fm = session.query(Filmman_movie) \
@@ -124,15 +105,8 @@ class Filmman(Base):  # 影人表，记录导演演员编剧的信息
     Role_Actor = 10
     Role_Writer = 100
 
-    def row2dict(self):
-        d = {}
-        for column in self.__table__.columns:
-            d[column.name] = str(getattr(self, column.name))
-        return d
-
     def save(self, session):
         session.merge(self)
-        session.commit()
 
     @staticmethod
     def query_by_id(id, session):
@@ -156,16 +130,26 @@ class Filmman(Base):  # 影人表，记录导演演员编剧的信息
 
 
 # 电影和标签的关系
-Tag_movie_table = Table('tag_movie', Base.metadata,
-                        Column('tid', Integer, ForeignKey('tag.id')),
-                        Column('mid', Integer, ForeignKey('movie.id')),
-                        )
+# 影人与电影关系
+class Tag_movie(Base):
+    __tablename__ = 'tag_movie'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    tid = Column(Integer, ForeignKey('tag.id'))
+    mid = Column(Integer, ForeignKey('movie.id'))
+
+    def save(self, session):
+        session.merge(self)
+
+    def query_by_tidmid(self, session):
+        tm = session.query(Filmman_movie) \
+            .filter(Tag_movie.tid == self.tid and Tag_movie.mid == self.mid).first()
+        return tm
 
 
 class Tag(Base):  # 电影标签
     __tablename__ = 'tag'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(50), nullable=True)
+    name = Column(String(50), nullable=True, unique=True)
 
     def row2dict(self):
         d = {}
@@ -174,12 +158,7 @@ class Tag(Base):  # 电影标签
         return d
 
     def save(self, session):
-        temp = Tag.query_by_name(self.name, session)
-        if temp is not None:
-            return temp
         session.merge(self)
-        session.commit()
-        return self
 
     @staticmethod
     def query_by_id(id, session):
@@ -196,6 +175,15 @@ class Tag(Base):  # 电影标签
         movies = tag.movies
         return movies
 
+    @staticmethod
+    def get_tag(name, session):
+        temp = Tag.query_by_name(name, session)
+        if temp is None:
+            tag = Tag(name=name)
+            tag.save(session)
+            return tag
+        return temp
+
 
 # 进度表
 class Progress(Base):
@@ -206,7 +194,6 @@ class Progress(Base):
 
     def save(self, session):
         session.merge(self)
-        session.commit()
 
     @staticmethod
     def load(session):
