@@ -28,36 +28,50 @@ def run():
             spider.init()
 
 
-async def worker(debug=False):
-    # 获取EventLoop:
+async def consumer(debug=False):
     session = DBSession()
-    spider = Spider(session, debug=debug)
+    spider = Spider(session)
     redis = RedisHelper()
     while True:
         try:
             res = redis.randomkey()
-            if res == 0:
-                await spider.get_tpye_list()
+            if res is None:
+                await asyncio.sleep(1)
             await spider.get_subject()
-        except (TimeoutError, ClientResponseError, ClientOSError, ServerDisconnectedError,
-                RuntimeWarning, AssertionError, ClientPayloadError):
-            spider.init()
+        except Exception:
+            if debug:
+                traceback.print_exc()
             continue
 
 
+async def producer(debug=False):
+    session = DBSession()
+    spider = Spider(session)
+    redis = RedisHelper()
+    while True:
+        res = redis.randomkey()
+        if res is None:
+            try:
+                await spider.get_tpye_list()
+            except Exception:
+                if debug:
+                    traceback.print_exc()
+                continue
+
+
 def run_thread(max_thread=1, debug=False):
+    asyncio.ensure_future(producer(debug))
     for x in range(max_thread):
-        asyncio.ensure_future(worker(debug))
+        asyncio.ensure_future(consumer(debug))
     loop = asyncio.get_event_loop()
     try:
         loop.run_forever()
-    except KeyboardInterrupt as e:
+    except KeyboardInterrupt:
         print(asyncio.gather(*asyncio.Task.all_tasks()).cancel())
         loop.stop()
-        loop.run_forever()
     finally:
         loop.close()
 
 
 if __name__ == "__main__":
-    run_thread(max_thread=20)
+    run_thread(max_thread=13)

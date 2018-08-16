@@ -26,7 +26,7 @@ class Spider(object):
     api_url = 'https://api.douban.com/v2/movie/subject/'
 
     # 初始化时自动得到header和cookie
-    def __init__(self, session=None, proxy="", tag="", start=0, range="0,10", sort='S', genres=0, debug=False):
+    def __init__(self, session=None, proxy="", tag="", start=0, range="0,10", sort='S', genres=0):
         self.session = DBSession()
         self.header = config.get_header()
         self.cookie = config.get_cookie()
@@ -40,7 +40,6 @@ class Spider(object):
         self.proxy = get_proxy()
         self.load_progress()
         self.redis = RedisHelper()
-        self.debug = debug
 
     def get_params(self):
         params = {
@@ -73,7 +72,6 @@ class Spider(object):
 
     # 初始化cookie
     def init(self):
-        # print("初始化，ip为{}".format(self.get_proxy()))
         self.cookie = config.get_cookie()
         self.header = config.get_header()
         bad_proxy(self.proxy)
@@ -106,16 +104,15 @@ class Spider(object):
             except (TimeoutError, ClientResponseError, ClientOSError, ServerDisconnectedError,
                     RuntimeWarning, AssertionError, ClientPayloadError):
                 self.init()
-                if self.debug:
-                    traceback.print_exc()
                 continue
 
     async def get_subject(self):
         key = self.redis.randomkey()
-        # while key is not None:
-        start = time.time()
         # 从redis中取出数据，如果没有数据就要让getlist取
-        film = eval(self.redis.get(key).decode("utf-8"))
+        film = self.redis.get(key)
+        if film is None:
+            return None
+        film = eval(film.decode("utf-8"))
         url = film['url']
         id = url.split('/')[-2]
         movie = Movie(id=int(id))
@@ -127,6 +124,7 @@ class Spider(object):
                                            timeout=3) as resp:
                         subject_json = await resp.json()
                         if resp.status == 404:
+                            print("该页面404{}".format(movie))
                             self.redis.delete(key)
                             continue
                         assert resp.status == 200, "失败，理由如下{}".format(str(await resp.text()))
@@ -155,8 +153,6 @@ class Spider(object):
             except (TimeoutError, ClientResponseError, ClientOSError, ServerDisconnectedError,
                     RuntimeWarning, AssertionError, ClientPayloadError):
                 self.init()
-                if self.debug:
-                    traceback.print_exc()
                 continue
         # 得到标签数据
         while True:
@@ -172,20 +168,18 @@ class Spider(object):
                         tags = html.xpath('//*[@class="tags-body"]/a/text()')
                         if len(tags) == 0:
                             print(url + "增加标签格式适配")
+                            self.redis.set(id, film)  # 可能是因为网络问题没有取得数据，先存着
                             break
                         for x_tag in tags:
                             tag = Tag.get_tag(x_tag, self.session)
                             movie.append_tag(tag, self.session)
                         asyncio.sleep(1000)
                         self.session.commit()
-                        end = time.time()
-                        print("得到了《{}》的基本数据, 用时{}秒, 标签为{}".format(movie.name, round((end - start), 2), tags))
-                        self.redis.delete(key)
+                        print("得到了《{}》的基本数据,标签为{}".format(movie.name, tags))
                         # key = self.redis.randomkey()
+                        self.redis.delete(key)
                         break
             except (TimeoutError, ClientResponseError, ClientOSError, ServerDisconnectedError,
                     RuntimeWarning, AssertionError, ClientPayloadError):
                 self.init()
-                if self.debug:
-                    traceback.print_exc()
                 # continue
