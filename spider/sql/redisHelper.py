@@ -29,8 +29,4 @@ class RedisHelper:
 if __name__ == "__main__":
     redis = RedisHelper()
     temp = 0
-    while True:
-        size = redis.dbsize()
-        if temp != size:
-            temp = size
-            print(temp)
+    print(redis.randomkey())
