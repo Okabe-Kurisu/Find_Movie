@@ -3,7 +3,7 @@ import json
 import asyncio
 import time
 
-from aiohttp import ClientSession, ClientResponseError, ClientOSError, ServerDisconnectedError
+from aiohttp import ClientSession, ClientResponseError, ClientOSError, ServerDisconnectedError, ClientPayloadError
 from lxml import etree
 from spider import spider_config as config
 from sql.dbHelper import Movie, Filmman, Tag, Progress
@@ -55,8 +55,9 @@ class Spider(object):
     def get_proxy(self):
         return "http://" + str(self.proxy[0]) + ':' + str(self.proxy[1])
 
-    def save_progress(self, x=0):
-        progress = Progress(id=1, start=self.start + x, genres=self.genres)
+    def save_progress(self):
+        self.start += 1
+        progress = Progress(id=1, start=self.start, genres=self.genres)
         progress.save(self.session)
 
     def load_progress(self):
@@ -75,21 +76,27 @@ class Spider(object):
 
     # 得到搜索列表页面的url
     async def get_tpye_list(self):
-        async with ClientSession(cookies=self.cookie, headers=self.header) as session:
-            async with session.get(self.list_url, params=self.get_params(),
-                                   proxy=self.get_proxy(),
-                                   timeout=5) as resp:
-                text = await resp.text()
-                assert resp.status == 200, "失败，理由如下{}".format(await resp.text())
-                pages = json.loads(text)['data']
-                if len(pages) == 0:
-                    self.start += 0
-                    self.genres += 1
-                    raise RuntimeWarning("开始获取{}分类".format(self.get_params()["tags"]))
-                else:
-                    print("得到了{}分类的第{}页, 共{}个数据".format(self.get_params()['genres'], self.get_params()['start'],
-                                                        len(pages)))
-                    return pages
+        while True:
+            try:
+                async with ClientSession(cookies=self.cookie, headers=self.header) as session:
+                    async with session.get(self.list_url, params=self.get_params(),
+                                           proxy=self.get_proxy(),
+                                           timeout=3) as resp:
+                        text = await resp.text()
+                        assert resp.status == 200, "失败，理由如下{}".format(await resp.text())
+                        pages = json.loads(text)['data']
+                        if len(pages) == 0:
+                            self.start = 0
+                            self.genres += 1
+                            raise RuntimeWarning("开始获取{}分类".format(self.get_params()["tags"]))
+                        else:
+                            print("得到了{}分类的第{}页, 共{}个数据".format(self.get_params()['genres'], self.get_params()['start'],
+                                                                len(pages)))
+                            return pages
+            except (TimeoutError, ClientResponseError, ClientOSError, ServerDisconnectedError,
+                    RuntimeWarning, AssertionError, ClientPayloadError):
+                self.init()
+                continue
 
     async def get_subject(self, film):
         start = time.time()
@@ -104,7 +111,7 @@ class Spider(object):
                 async with ClientSession(cookies=self.cookie, headers=self.header) as session:
                     async with session.get(self.api_url + id, params=self.get_params(),
                                            proxy=self.get_proxy(),
-                                           timeout=5) as resp:
+                                           timeout=3) as resp:
                         subject_json = await resp.json()
                         if resp.status == 404:
                             return None
@@ -112,7 +119,8 @@ class Spider(object):
                         movie.name = subject_json['title']
                         movie.original_name = subject_json['original_title']
                         movie.poster = subject_json['images']['large']
-                        movie.released = int(subject_json['year'])
+                        if subject_json['year'] != "":
+                            movie.released = int(subject_json['year'])
                         movie.country = str(subject_json['countries'])
                         movie.douban_rating = subject_json['rating']['average']
                         movie.douban_votes = subject_json['ratings_count']
@@ -131,11 +139,11 @@ class Spider(object):
                         self.session.commit()
                         break
             except (TimeoutError, ClientResponseError, ClientOSError, ServerDisconnectedError,
-                    RuntimeWarning, AssertionError):
+                                RuntimeWarning, AssertionError, ClientPayloadError):
                 self.init()
                 continue
         end = time.time()
-        print("得到了{}的基本数据, 用时{}秒".format(movie.name, (end - start)))
+        print("得到了《{}》的基本数据, 用时{}秒".format(movie.name, (end - start)))
         return movie
 
     async def get_tags(self, movie, url, num):
@@ -148,7 +156,7 @@ class Spider(object):
                 async with ClientSession(cookies=self.cookie, headers=self.header) as session:
                     async with session.get(url, params=self.get_params(),
                                            proxy=self.get_proxy(),
-                                           timeout=5) as resp:
+                                           timeout=3) as resp:
                         html = await resp.text()
                         assert resp.status == 200, "失败，理由如下{}".format(str(await resp.text()))
                         html = etree.HTML(html)
@@ -160,12 +168,12 @@ class Spider(object):
                             tag = Tag.get_tag(x_tag, self.session)
                             movie.append_tag(tag, self.session)
                         asyncio.sleep(1000)
-                        self.save_progress(num + 1)  # 存储进度
                         self.session.commit()
+                        self.save_progress()  # 存储进度
                         end = time.time()
-                        print("得到{}的标签数据{}，用时{}秒".format(movie.name, tags, (end - start)))
+                        print("得到《{}》的标签数据{}，用时{}秒".format(movie.name, tags, (end - start)))
                         break
             except (TimeoutError, ClientResponseError, ClientOSError, ServerDisconnectedError,
-                    RuntimeWarning, AssertionError):
+                                RuntimeWarning, AssertionError, ClientPayloadError):
                 self.init()
                 continue

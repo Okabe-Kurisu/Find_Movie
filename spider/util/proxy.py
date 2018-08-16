@@ -12,7 +12,7 @@ def get_proxy():
 def bad_proxy(ip):
     proxy = sqlhelper.select(1, {"ip": ip[0], 'port': ip[1]})
     if proxy[0][2] <= 0:
-        del_proxy(proxy[0])
+        return None
     res = sqlhelper.update({'ip': ip[0], 'port': ip[1]}, {'score': proxy[0][2] - 1})
     return res
 

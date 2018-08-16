@@ -7,7 +7,7 @@ from sqlalchemy import Column, String, Integer, Text, Float, ForeignKey
 import traceback
 
 conn_url = 'mysql+pymysql://' + config.mysql_username + ':' + config.mysql_passwd + '@' + config.mysql_host + '/' + \
-           config.mysql_dbname + '?charset=utf8'
+           config.mysql_dbname
 engine = create_engine(conn_url, pool_size=100)
 DBSession = sessionmaker(bind=engine, autocommit=False)
 Base = declarative_base()
@@ -17,11 +17,11 @@ class Movie(Base):  # 电影表，记录电影的各种信息
     __tablename__ = 'movie'
     id = Column(Integer, primary_key=True, autoincrement=True)  # 豆瓣id就是唯一id
     imdb_id = Column(String(10))
-    name = Column(String(57), nullable=True)  # 57据说是世界上最长的电影名长度
-    original_name = Column(String(100))  # 非中文名
-    poster = Column(String(100), default='no pic')  # 海报地址
+    name = Column(String(120), nullable=True)  # 57据说是世界上最长的电影名长度
+    original_name = Column(String(120))  # 非中文名
+    poster = Column(String(150), default='no pic')  # 海报地址
     released = Column(String(10))  # 发行年份
-    country = Column(String(50))  # 制片国家
+    country = Column(String(200))  # 制片国家
     runtime = Column(String(5))  # 电影时长 omdb获得
     language = Column(String(70))  # 发行语言 omdb获得
     douban_rating = Column(Float)
@@ -92,8 +92,8 @@ class Filmman_movie(Base):
 class Filmman(Base):  # 影人表，记录导演演员编剧的信息
     __tablename__ = 'filmman'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(50), nullable=True)
-    name_en = Column(String(50))
+    name = Column(String(), nullable=True)
+    name_en = Column(String(150))
     aka = Column(String(20))
     aka_en = Column(String(50))
     born_date = Column(String(10))
