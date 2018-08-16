@@ -1,11 +1,13 @@
+import random
+
 from IPProxyPool.db.DataStore import sqlhelper
 from IPProxyPool.IPProxy import Proxy_Pool_Start
 
 
 # 随便取得一个代理ip
 def get_proxy():
-    res = sqlhelper.select(1, {"type": 0})
-    return res[0][0], res[0][1]
+    res = random.choice(sqlhelper.select(20, {"type": 0}))
+    return res[0], res[1]
 
 
 # 不好就扣分,好就加分

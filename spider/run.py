@@ -28,15 +28,15 @@ def run():
             spider.init()
 
 
-async def worker():
+async def worker(debug=False):
     # 获取EventLoop:
     session = DBSession()
-    spider = Spider(session)
+    spider = Spider(session, debug=debug)
     redis = RedisHelper()
     while True:
         try:
             res = redis.randomkey()
-            if res is None:
+            if res == 0:
                 await spider.get_tpye_list()
             await spider.get_subject()
         except (TimeoutError, ClientResponseError, ClientOSError, ServerDisconnectedError,
@@ -45,10 +45,9 @@ async def worker():
             continue
 
 
-def run_thread(max_thread=1):
+def run_thread(max_thread=1, debug=False):
     for x in range(max_thread):
-        asyncio.ensure_future(worker())
-
+        asyncio.ensure_future(worker(debug))
     loop = asyncio.get_event_loop()
     try:
         loop.run_forever()
@@ -61,4 +60,4 @@ def run_thread(max_thread=1):
 
 
 if __name__ == "__main__":
-    run_thread(max_thread=5)
+    run_thread(max_thread=20)

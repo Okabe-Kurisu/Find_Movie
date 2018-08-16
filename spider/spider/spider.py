@@ -26,7 +26,7 @@ class Spider(object):
     api_url = 'https://api.douban.com/v2/movie/subject/'
 
     # 初始化时自动得到header和cookie
-    def __init__(self, session=None, proxy="", tag="", start=0, range="0,10", sort='S', genres=0):
+    def __init__(self, session=None, proxy="", tag="", start=0, range="0,10", sort='S', genres=0, debug=False):
         self.session = DBSession()
         self.header = config.get_header()
         self.cookie = config.get_cookie()
@@ -40,6 +40,7 @@ class Spider(object):
         self.proxy = get_proxy()
         self.load_progress()
         self.redis = RedisHelper()
+        self.debug = debug
 
     def get_params(self):
         params = {
@@ -97,14 +98,16 @@ class Spider(object):
                             for page in pages:
                                 self.redis.set(page['id'], page)
                             print("得到了{}分类的第{}页, 共{}个数据".format(self.get_params()['genres'],
-                                                                    int(self.get_params()['start'] / 20),
-                                                                    len(pages)))
+                                                                int(self.get_params()['start'] / 20),
+                                                                len(pages)))
                             self.save_progress(len(pages))  # 存储进度
                             if self.redis.randomkey() is not None:
                                 return True
             except (TimeoutError, ClientResponseError, ClientOSError, ServerDisconnectedError,
                     RuntimeWarning, AssertionError, ClientPayloadError):
                 self.init()
+                if self.debug:
+                    traceback.print_exc()
                 continue
 
     async def get_subject(self):
@@ -152,6 +155,8 @@ class Spider(object):
             except (TimeoutError, ClientResponseError, ClientOSError, ServerDisconnectedError,
                     RuntimeWarning, AssertionError, ClientPayloadError):
                 self.init()
+                if self.debug:
+                    traceback.print_exc()
                 continue
         # 得到标签数据
         while True:
@@ -167,6 +172,7 @@ class Spider(object):
                         tags = html.xpath('//*[@class="tags-body"]/a/text()')
                         if len(tags) == 0:
                             print(url + "增加标签格式适配")
+                            break
                         for x_tag in tags:
                             tag = Tag.get_tag(x_tag, self.session)
                             movie.append_tag(tag, self.session)
@@ -180,4 +186,6 @@ class Spider(object):
             except (TimeoutError, ClientResponseError, ClientOSError, ServerDisconnectedError,
                     RuntimeWarning, AssertionError, ClientPayloadError):
                 self.init()
+                if self.debug:
+                    traceback.print_exc()
                 # continue
