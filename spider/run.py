@@ -17,11 +17,8 @@ def run():
     spider = Spider(session)
     while True:
         try:
-            filmlist = loop.run_until_complete(spider.get_tpye_list())
-            for x in range(len(filmlist)):
-                film = filmlist[x]
-                movie = loop.run_until_complete(spider.get_subject(film))
-                loop.run_until_complete(spider.get_tags(movie, str(film['url']), x))
+            loop.run_until_complete(spider.get_tpye_list())
+            loop.run_until_complete(spider.get_subject())
         except (TimeoutError, ClientResponseError, ClientOSError, ServerDisconnectedError,
                 RuntimeWarning, AssertionError, ClientPayloadError):
             spider.init()
@@ -31,20 +28,37 @@ def run():
             spider.init()
 
 
-async def get_tpye_list(spider):
-    await spider.get_tpye_list()
-
-
-async def get_movie(spider):
+async def worker():
+    # 获取EventLoop:
+    session = DBSession()
+    spider = Spider(session)
     redis = RedisHelper()
-    key = redis.randomkey()
-    if key is None:
-        return
-    film = redis.get(key)
-    movie = await spider.get_subject(film)
-    await spider.get_tags(movie, str(film['url']), x)
+    while True:
+        try:
+            res = redis.randomkey()
+            if res is None:
+                await spider.get_tpye_list()
+            await spider.get_subject()
+        except (TimeoutError, ClientResponseError, ClientOSError, ServerDisconnectedError,
+                RuntimeWarning, AssertionError, ClientPayloadError):
+            spider.init()
+            continue
+
+
+def run_thread(max_thread=1):
+    for x in range(max_thread):
+        asyncio.ensure_future(worker())
+
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_forever()
+    except KeyboardInterrupt as e:
+        print(asyncio.gather(*asyncio.Task.all_tasks()).cancel())
+        loop.stop()
+        loop.run_forever()
+    finally:
+        loop.close()
 
 
 if __name__ == "__main__":
-    run()
-    # todo 重构成生产者-消费者模式。生产者是spider.get_tpye_list()，消费者是get_subject和get_tags
+    run_thread(max_thread=5)

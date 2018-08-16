@@ -4,9 +4,11 @@ import asyncio
 import time
 
 from aiohttp import ClientSession, ClientResponseError, ClientOSError, ServerDisconnectedError, ClientPayloadError
+import traceback
 from lxml import etree
 from spider import spider_config as config
-from sql.dbHelper import Movie, Filmman, Tag, Progress
+from sql.dbHelper import Movie, Filmman, Tag, Progress, DBSession
+from sql.redisHelper import RedisHelper
 from util.proxy import get_proxy, bad_proxy, good_proxy
 
 
@@ -24,8 +26,8 @@ class Spider(object):
     api_url = 'https://api.douban.com/v2/movie/subject/'
 
     # 初始化时自动得到header和cookie
-    def __init__(self, session, proxy="", tag="", start=0, range="0,10", sort='S', genres=0):
-        self.session = session
+    def __init__(self, session=None, proxy="", tag="", start=0, range="0,10", sort='S', genres=0):
+        self.session = DBSession()
         self.header = config.get_header()
         self.cookie = config.get_cookie()
         self.proxy = proxy
@@ -37,6 +39,7 @@ class Spider(object):
         self.genres = genres
         self.proxy = get_proxy()
         self.load_progress()
+        self.redis = RedisHelper()
 
     def get_params(self):
         params = {
@@ -55,8 +58,8 @@ class Spider(object):
     def get_proxy(self):
         return "http://" + str(self.proxy[0]) + ':' + str(self.proxy[1])
 
-    def save_progress(self):
-        self.start += 1
+    def save_progress(self, len):
+        self.start += len
         progress = Progress(id=1, start=self.start, genres=self.genres)
         progress.save(self.session)
 
@@ -69,6 +72,7 @@ class Spider(object):
 
     # 初始化cookie
     def init(self):
+        # print("初始化，ip为{}".format(self.get_proxy()))
         self.cookie = config.get_cookie()
         self.header = config.get_header()
         bad_proxy(self.proxy)
@@ -90,21 +94,27 @@ class Spider(object):
                             self.genres += 1
                             raise RuntimeWarning("开始获取{}分类".format(self.get_params()["tags"]))
                         else:
-                            print("得到了{}分类的第{}页, 共{}个数据".format(self.get_params()['genres'], self.get_params()['start'],
-                                                                len(pages)))
-                            return pages
+                            for page in pages:
+                                self.redis.set(page['id'], page)
+                            print("得到了{}分类的第{}页, 共{}个数据".format(self.get_params()['genres'],
+                                                                    int(self.get_params()['start'] / 20),
+                                                                    len(pages)))
+                            self.save_progress(len(pages))  # 存储进度
+                            if self.redis.randomkey() is not None:
+                                return True
             except (TimeoutError, ClientResponseError, ClientOSError, ServerDisconnectedError,
                     RuntimeWarning, AssertionError, ClientPayloadError):
                 self.init()
                 continue
 
-    async def get_subject(self, film):
+    async def get_subject(self):
+        key = self.redis.randomkey()
+        # while key is not None:
         start = time.time()
-        url = str(film['url'])
+        # 从redis中取出数据，如果没有数据就要让getlist取
+        film = eval(self.redis.get(key).decode("utf-8"))
+        url = film['url']
         id = url.split('/')[-2]
-        # 可能会要更新数据，还是不要跳过任何一个数据了
-        # if Movie.query_by_id(id, self.session) is not None:
-        #     continue
         movie = Movie(id=int(id))
         while True:
             try:
@@ -114,7 +124,8 @@ class Spider(object):
                                            timeout=3) as resp:
                         subject_json = await resp.json()
                         if resp.status == 404:
-                            return None
+                            self.redis.delete(key)
+                            continue
                         assert resp.status == 200, "失败，理由如下{}".format(str(await resp.text()))
                         movie.name = subject_json['title']
                         movie.original_name = subject_json['original_title']
@@ -139,17 +150,10 @@ class Spider(object):
                         self.session.commit()
                         break
             except (TimeoutError, ClientResponseError, ClientOSError, ServerDisconnectedError,
-                                RuntimeWarning, AssertionError, ClientPayloadError):
+                    RuntimeWarning, AssertionError, ClientPayloadError):
                 self.init()
                 continue
-        end = time.time()
-        print("得到了《{}》的基本数据, 用时{}秒".format(movie.name, (end - start)))
-        return movie
-
-    async def get_tags(self, movie, url, num):
-        if movie is None:
-            return
-        start = time.time()
+        # 得到标签数据
         while True:
             try:
                 # 得到标签数据
@@ -161,7 +165,6 @@ class Spider(object):
                         assert resp.status == 200, "失败，理由如下{}".format(str(await resp.text()))
                         html = etree.HTML(html)
                         tags = html.xpath('//*[@class="tags-body"]/a/text()')
-
                         if len(tags) == 0:
                             print(url + "增加标签格式适配")
                         for x_tag in tags:
@@ -169,11 +172,12 @@ class Spider(object):
                             movie.append_tag(tag, self.session)
                         asyncio.sleep(1000)
                         self.session.commit()
-                        self.save_progress()  # 存储进度
                         end = time.time()
-                        print("得到《{}》的标签数据{}，用时{}秒".format(movie.name, tags, (end - start)))
+                        print("得到了《{}》的基本数据, 用时{}秒, 标签为{}".format(movie.name, round((end - start), 2), tags))
+                        self.redis.delete(key)
+                        # key = self.redis.randomkey()
                         break
             except (TimeoutError, ClientResponseError, ClientOSError, ServerDisconnectedError,
-                                RuntimeWarning, AssertionError, ClientPayloadError):
+                    RuntimeWarning, AssertionError, ClientPayloadError):
                 self.init()
-                continue
+                # continue

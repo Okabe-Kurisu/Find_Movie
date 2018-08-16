@@ -10,8 +10,8 @@ class RedisHelper:
     def set(self, key, value):
         return self.redis.setnx(key, value)
 
-    def msetnx(self, map):
-        return self.redis.setnx(map)
+    def mset(self, dict):
+        return self.redis.mset(map)
 
     def get(self, key):
         return self.redis.get(key)
@@ -22,8 +22,10 @@ class RedisHelper:
     def randomkey(self):
         return self.redis.randomkey()
 
+    def dbsize(self):
+        return self.redis.dbsize()
+
 
 if __name__ == "__main__":
     redis = RedisHelper()
-    print(redis.set("1", {"asd":1}))
-    print(redis.get("1"))
+    print(redis.dbsize())
