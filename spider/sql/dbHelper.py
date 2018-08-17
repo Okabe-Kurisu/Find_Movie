@@ -216,6 +216,5 @@ def drop_DB():
 
 
 if __name__ == "__main__":
-    session = DBSession()
-    movie = Movie(id="1213321")
-    print(movie.query_by_id(1213321, session))
+    drop_DB()
+    init_DB()

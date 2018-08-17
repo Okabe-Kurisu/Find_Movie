@@ -87,24 +87,22 @@ class Spider(object):
                                            timeout=3) as resp:
                         text = await resp.text()
                         assert resp.status == 200, "失败，理由如下{}".format(await resp.text())
-                        pages = json.loads(text)['data']
-                        if len(pages) == 0:
-                            self.start = 0
-                            self.genres += 1
-                            raise RuntimeWarning("开始获取{}分类".format(self.get_params()["tags"]))
-                        else:
-                            for page in pages:
-                                self.redis.set(page['id'], page)
-                            print("得到了{}分类的第{}页, 共{}个数据".format(self.get_params()['genres'],
-                                                                int(self.get_params()['start'] / 20),
-                                                                len(pages)))
-                            self.save_progress(len(pages))  # 存储进度
-                            if self.redis.randomkey() is not None:
-                                return True
-            except (TimeoutError, ClientResponseError, ClientOSError, ServerDisconnectedError,
-                    RuntimeWarning, AssertionError, ClientPayloadError):
+            except Exception:
+                # print("生产失败")
                 self.init()
                 continue
+            pages = json.loads(text)['data']
+            if len(pages) == 0:
+                self.start = 0
+                self.genres += 1
+                raise RuntimeWarning("开始获取{}分类".format(self.get_params()["tags"]))
+            else:
+                for page in pages:
+                    self.redis.set(page['id'], page)
+                self.save_progress(len(pages))  # 存储进度
+                return "得到了{}分类的第{}页, 共{}个数据".format(self.get_params()['genres'],
+                                                     int(self.get_params()['start'] / 20),
+                                                     len(pages))
 
     async def get_subject(self):
         key = self.redis.randomkey()
@@ -124,36 +122,39 @@ class Spider(object):
                                            timeout=3) as resp:
                         subject_json = await resp.json()
                         if resp.status == 404:
-                            print("该页面404{}".format(movie))
                             self.redis.delete(key)
                             continue
                         assert resp.status == 200, "失败，理由如下{}".format(str(await resp.text()))
-                        movie.name = subject_json['title']
-                        movie.original_name = subject_json['original_title']
-                        movie.poster = subject_json['images']['large']
-                        if subject_json['year'] != "":
-                            movie.released = int(subject_json['year'])
-                        movie.country = str(subject_json['countries'])
-                        movie.douban_rating = subject_json['rating']['average']
-                        movie.douban_votes = subject_json['ratings_count']
-                        movie.polt = subject_json['summary']
-                        movie = movie.save(self.session)
-                        if 'casts' in subject_json:
-                            for man in subject_json['casts']:
-                                filmman = Filmman(id=man['id'], name=man['name'])
-                                filmman.save(self.session)
-                                movie.append_filmman(filmman, Filmman.Role_Actor, self.session)
-                        if 'directors' in subject_json:
-                            for man in subject_json['directors']:
-                                filmman = Filmman(id=man['id'], name=man['name'])
-                                filmman.save(self.session)
-                                movie.append_filmman(filmman, Filmman.Role_Director, self.session)
-                        self.session.commit()
-                        break
-            except (TimeoutError, ClientResponseError, ClientOSError, ServerDisconnectedError,
-                    RuntimeWarning, AssertionError, ClientPayloadError):
+            except Exception:
+                # print("取得页面失败")
                 self.init()
                 continue
+            movie.name = subject_json['title']
+            movie.original_name = subject_json['original_title']
+            movie.poster = subject_json['images']['large']
+            if subject_json['year'] != "":
+                movie.released = int(subject_json['year'])
+            movie.country = str(subject_json['countries'])
+            movie.douban_rating = subject_json['rating']['average']
+            movie.douban_votes = subject_json['ratings_count']
+            movie.polt = subject_json['summary']
+            movie = movie.save(self.session)
+            if 'casts' in subject_json:
+                for man in subject_json['casts']:
+                    filmman = Filmman(id=man['id'], name=man['name'])
+                    filmman.save(self.session)
+                    movie.append_filmman(filmman, Filmman.Role_Actor, self.session)
+            if 'directors' in subject_json:
+                for man in subject_json['directors']:
+                    filmman = Filmman(id=man['id'], name=man['name'])
+                    filmman.save(self.session)
+                    movie.append_filmman(filmman, Filmman.Role_Director, self.session)
+            self.session.commit()
+            break
+
+        # 确认一下还需不需要拿
+        if self.redis.get(key) is None:
+            return None
         # 得到标签数据
         while True:
             try:
@@ -164,22 +165,19 @@ class Spider(object):
                                            timeout=3) as resp:
                         html = await resp.text()
                         assert resp.status == 200, "失败，理由如下{}".format(str(await resp.text()))
-                        html = etree.HTML(html)
-                        tags = html.xpath('//*[@class="tags-body"]/a/text()')
-                        if len(tags) == 0:
-                            print(url + "增加标签格式适配")
-                            self.redis.set(id, film)  # 可能是因为网络问题没有取得数据，先存着
-                            break
-                        for x_tag in tags:
-                            tag = Tag.get_tag(x_tag, self.session)
-                            movie.append_tag(tag, self.session)
-                        asyncio.sleep(1000)
-                        self.session.commit()
-                        print("得到了《{}》的基本数据,标签为{}".format(movie.name, tags))
-                        # key = self.redis.randomkey()
-                        self.redis.delete(key)
-                        break
-            except (TimeoutError, ClientResponseError, ClientOSError, ServerDisconnectedError,
-                    RuntimeWarning, AssertionError, ClientPayloadError):
+            except Exception:
+                # print("取得标签失败")
                 self.init()
-                # continue
+                continue
+            html = etree.HTML(html)
+            tags = html.xpath('//*[@class="tags-body"]/a/text()')
+            if len(tags) == 0:
+                print(url + "增加标签格式适配" + html.xpath('//*[@class="tags-body"]'))
+                self.redis.set(id, film)  # 可能是因为网络问题没有取得数据，先存着
+                return False
+            for x_tag in tags:
+                tag = Tag.get_tag(x_tag, self.session)
+                movie.append_tag(tag, self.session)
+            self.session.commit()
+            self.redis.delete(key)
+            return "得到了《{}》的基本数据, 标签为{}".format(movie.name, tags)

@@ -1,3 +1,5 @@
+import time
+
 from redis import StrictRedis, ConnectionPool
 
 
@@ -25,8 +27,17 @@ class RedisHelper:
     def dbsize(self):
         return self.redis.dbsize()
 
+    def getall(self):
+        return self.redis.keys()
+
 
 if __name__ == "__main__":
     redis = RedisHelper()
-    temp = 0
-    print(redis.randomkey())
+    storage = 0
+    print("当前还有{}条数据等待存储".format(redis.dbsize()))
+    while True:
+        size = redis.dbsize()
+        if storage != size:
+            storage = size
+            print("当前还有{}条数据等待存储".format(size)) #, redis.getall()))
+        time.sleep(1)
