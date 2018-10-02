@@ -5,54 +5,34 @@ import time
 import traceback
 from aiohttp.client_exceptions import ClientResponseError, ClientOSError, ServerDisconnectedError, ClientPayloadError
 from sql.redisHelper import RedisHelper
-from spider.spider import Spider
-from sql.dbHelper import DBSession
+from spider.spider import TypeList, MovieParse
 from concurrent.futures._base import TimeoutError
 
 
-def run():
-    loop = asyncio.get_event_loop()
-    spider = Spider(session)
-    while True:
-        try:
-            loop.run_until_complete(spider.get_tpye_list())
-            loop.run_until_complete(spider.get_subject())
-        except (TimeoutError, ClientResponseError, ClientOSError, ServerDisconnectedError,
-                RuntimeWarning, AssertionError, ClientPayloadError):
-            spider.init()
-            continue
-        except Exception:
-            traceback.print_exc()
-            spider.init()
-
-
 async def consumer(debug=False):
-    session = DBSession()
-    spider = Spider(session)
     while True:
-        res = redis.randomkey()
-        if res is None:
+        res = redis.set_size("pages")
+        if not res:
             await asyncio.sleep(3)
             continue
         else:
             try:
                 start = time.time()
-                res = await spider.get_subject()
+                m = MovieParse()
+                await m.get_movie()
+                await m.get_info()
+                res = m.save()
                 end = time.time()
                 if res is not None:
                     print(res + "，共花费{}秒".format(round(end - start, 2)))
             except Exception:
                 if debug:
-                    spider.get_proxy()
                     traceback.print_exc()
-    del spider
 
 
 async def producer(debug=False, threads=1):
-    session = DBSession()
-    spider = Spider(session)
     while True:
-        res = redis.dbsize()
+        res = redis.set_size("pages")
         preload = (int(threads / 20) + 1) * 20
         if res >= preload:
             await asyncio.sleep(1)
@@ -60,12 +40,12 @@ async def producer(debug=False, threads=1):
         else:
             try:
                 start = time.time()
-                res = await spider.get_tpye_list()
+                t = TypeList()
+                res = await t.get_tpye_list()
                 end = time.time()
                 print(res + "，共花费{}秒".format(round(end - start, 2)))
             except Exception:
                 if debug:
-                    spider.get_proxy()
                     traceback.print_exc()
 
 

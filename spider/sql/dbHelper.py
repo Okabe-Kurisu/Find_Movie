@@ -13,7 +13,7 @@ class DbHelper:
     def __init__(self):
         conn_url = 'mysql+pymysql://' + config.mysql_username + ':' + config.mysql_passwd + '@' + config.mysql_host + '/' + \
                    config.mysql_dbname
-        self.engine = create_engine(conn_url, pool_size=100, echo=False)
+        self.engine = create_engine(conn_url, pool_size=100, echo=False, pool_recycle=5 * 60)
         db_session = sessionmaker(bind=self.engine)
         self.session = db_session()
 
@@ -57,7 +57,7 @@ class Movie(Base):  # 电影表，记录电影的各种信息
     session = DbHelper.get_session()
 
     def save(self):
-        temp = Movie.query_by_id(self.id, self.session)
+        temp = self.query()
         if not temp:
             self.session.merge(self)
             return self
@@ -79,6 +79,7 @@ class Movie(Base):  # 电影表，记录电影的各种信息
 
     def append_filmman(self, filmman, role):
         fm = Filmman_movie(fid=filmman.id, mid=self.id, role=role)
+        filmman.session.close()
         fm.save()
 
     def append_tag(self, tag):
@@ -104,6 +105,7 @@ class Filmman_movie(Base):
 
     def save(self):
         self.session.merge(self)
+        self.session.close()
 
     def query_by_fidmid(self):
         fm = self.session.query(Filmman_movie) \
@@ -111,7 +113,8 @@ class Filmman_movie(Base):
         return fm
 
 
-class Filmman(Base):  # 影人表，记录导演演员编剧的信息
+# 影人表，记录导演演员编剧的信息
+class Filmman(Base):
     __tablename__ = 'filmman'
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(50), nullable=True)
@@ -124,15 +127,16 @@ class Filmman(Base):  # 影人表，记录导演演员编剧的信息
     avatar = Column(String(100))
     session = DbHelper.get_session()
 
-    Role_Director = 1
-    Role_Actor = 10
-    Role_Writer = 100
+    ROLE_DIRECTOR = 1
+    ROLE_ACTOR = 10
+    ROLE_WRITER = 100
 
     def save(self):
         temp = self.query()
         if temp:
             return temp
         self.session.merge(self)
+        self.session.close()
         return self
 
     def query(self):
@@ -149,9 +153,7 @@ class Filmman(Base):  # 影人表，记录导演演员编剧的信息
         return movies
 
 
-
 # 电影和标签的关系
-# 影人与电影关系
 class Tag_movie(Base):
     __tablename__ = 'tag_movie'
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -161,6 +163,7 @@ class Tag_movie(Base):
 
     def save(self):
         self.session.merge(self)
+        self.session.close()
 
     def query_by_tidmid(self):
         tm = self.session.query(Filmman_movie) \
@@ -168,7 +171,8 @@ class Tag_movie(Base):
         return tm
 
 
-class Tag(Base):  # 电影标签
+# 电影标签
+class Tag(Base):
     __tablename__ = 'tag'
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(50), nullable=True, unique=True)
@@ -179,6 +183,7 @@ class Tag(Base):  # 电影标签
         if temp:
             return temp
         self.session.merge(self)
+        self.session.close()
         return self
 
     def query(self):

@@ -51,11 +51,13 @@ class RedisHelper:
     def set_rem(self, key, value):
         return self.redis.srem(key, value)
 
+    def set_size(self, key):
+        return self.redis.scard(key)
+
 
 if __name__ == "__main__":
     redis = RedisHelper()
-    redis.set("a", "1")
-    print(str(redis.get("a"))[2:-1])
+    print(redis.set_size("pages"))
     # storage = 0
     # print("当前还有{}条数据等待存储".format(redis.dbsize()))
     # while True:
