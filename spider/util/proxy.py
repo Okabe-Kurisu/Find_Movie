@@ -6,7 +6,7 @@ from IPProxyPool.IPProxy import Proxy_Pool_Start
 
 # 随便取得一个代理ip
 def get_proxy():
-    res = random.choice(sqlhelper.select(20, {"type": 0}))
+    res = random.choice(sqlhelper.select(20, {"type": 0, "country": "国内"}))
     return res
 
 

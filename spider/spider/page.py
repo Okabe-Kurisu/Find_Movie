@@ -22,5 +22,4 @@ async def download(url, param=None):
                     assert r.status == 200
                     return text
         except Exception:
-            proxy.bad_proxy(proxies)
             continue

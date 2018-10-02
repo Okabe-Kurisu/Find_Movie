@@ -32,7 +32,7 @@ async def consumer(debug=False):
 async def producer(threads=1):
     while True:
         res = redis.set_size("pages")
-        preload = (int(threads / 20) + 1) * 20
+        preload = (threads // 20 + 1) * 20
         if res >= preload:
             await asyncio.sleep(1)
             continue
@@ -76,4 +76,7 @@ def clean():
 
 redis = RedisHelper()
 if __name__ == "__main__":
-    run_thread(max_thread=10, debug=True)
+    start = int(redis.get("start"))
+    redis.set("start", start - 200)
+    # clean()
+    run_thread(max_thread=100, debug=True)

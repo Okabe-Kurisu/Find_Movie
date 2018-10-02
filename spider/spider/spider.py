@@ -3,6 +3,7 @@
 # @Author  : Amadeus
 # @Desc : 用来解析豆瓣的内容
 import json
+import traceback
 
 from lxml import etree
 
@@ -53,6 +54,7 @@ class TypeList:
         if len(pages) == 0:
             self.start = 0
             self.genres += 1
+            self.save_progress(len(pages))  # 存储进度
             return "分类{}已经获取完成".format(self.get_params()['genres'])
         self.save_progress(len(pages))  # 存储进度
         for page in pages:
@@ -73,27 +75,32 @@ class MovieParse:
         id = self.url.split("/")[-2]
         self.movie = Movie(id=int(id))
         if self.movie.query():
+            print("电影{}已经存在".format(self.movie.query().name))
             return
         html = await page.download('https://api.douban.com/v2/movie/subject/' + id)
         if not html:
+            print("电影{}下载失败".format(self.movie.name))
             return
         if self.movie.query():
+            print("电影{}已经存在".format(self.movie.name))
             return
-        subject_json = json.loads(html)
-        self.movie.name = subject_json['title']
-        self.movie.original_name = subject_json['original_title']
-        self.movie.poster = subject_json['images']['large']
-        self.movie.released = int(subject_json['year']) if subject_json['year'] else 0
-        self.movie.country = str(subject_json['countries'])
-        self.movie.douban_rating = subject_json['rating']['average']
-        self.movie.douban_votes = subject_json['ratings_count']
-        self.movie.polt = subject_json['summary']
+        try:
+            subject_json = json.loads(html)
+            self.movie.name = subject_json['title']
+            self.movie.original_name = subject_json['original_title']
+            self.movie.poster = subject_json['images']['large']
+            self.movie.released = int(subject_json['year']) if subject_json['year'] else 0
+            self.movie.country = str(subject_json['countries'])
+            self.movie.douban_rating = subject_json['rating']['average']
+            self.movie.douban_votes = subject_json['ratings_count']
+            self.movie.polt = subject_json['summary']
+            self.movie.save()
 
-        await self.get_info()
-        if self.movie.query():
-            return
-        self.movie.save()
-        return "得到了《{}》的基本数据".format(self.movie.name)
+            await self.get_info()
+            return "得到了《{}》的基本数据".format(self.movie.name)
+        except Exception:
+            self.redis.set_add("pages", self.url)
+            traceback.print_exc()
 
     async def get_info(self):
         html = await page.download(self.url)
