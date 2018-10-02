@@ -27,7 +27,7 @@ class DbHelper:
     def get_session():
         conn_url = 'mysql+pymysql://' + config.mysql_username + ':' + config.mysql_passwd + '@' + config.mysql_host + '/' + \
                    config.mysql_dbname
-        engine = create_engine(conn_url, pool_size=100, echo=False)
+        engine = create_engine(conn_url, pool_size=100, echo=False, pool_recycle=5 * 60)
         db_session = sessionmaker(bind=engine)
         return db_session()
 
@@ -66,7 +66,7 @@ class Movie(Base):  # 电影表，记录电影的各种信息
     def query(self):  # 检查是否重复保存了数据
         query = self.session.query(Movie)
         if self.id:
-            query = query.filter(Movie.id == id)
+            query = query.filter(Movie.id == self.id)
         return query.first()
 
     def query_all_filmmaker(self):
@@ -78,18 +78,12 @@ class Movie(Base):  # 电影表，记录电影的各种信息
         return tags
 
     def append_filmman(self, filmman, role):
+        filmman = filmman.save()
         fm = Filmman_movie(fid=filmman.id, mid=self.id, role=role)
-        filmman.session.close()
         fm.save()
 
     def append_tag(self, tag):
-        temp = tag.query()
-        if temp:
-            tag = temp
-        tags = self.query_all_tag()
-        for t in tags:
-            if t.id == tag.id:
-                return
+        tag = tag.save()
         tm = Tag_movie(tid=tag.id, mid=self.id)
         tm.save()
 
@@ -105,7 +99,6 @@ class Filmman_movie(Base):
 
     def save(self):
         self.session.merge(self)
-        self.session.close()
 
     def query_by_fidmid(self):
         fm = self.session.query(Filmman_movie) \
@@ -136,7 +129,6 @@ class Filmman(Base):
         if temp:
             return temp
         self.session.merge(self)
-        self.session.close()
         return self
 
     def query(self):
@@ -163,7 +155,6 @@ class Tag_movie(Base):
 
     def save(self):
         self.session.merge(self)
-        self.session.close()
 
     def query_by_tidmid(self):
         tm = self.session.query(Filmman_movie) \
@@ -183,7 +174,6 @@ class Tag(Base):
         if temp:
             return temp
         self.session.merge(self)
-        self.session.close()
         return self
 
     def query(self):
@@ -201,5 +191,5 @@ class Tag(Base):
 
 
 if __name__ == "__main__":
-    s = DbHelper()
-    s.init_DB()
+    d = DbHelper()
+    d.init_DB()

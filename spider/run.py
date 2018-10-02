@@ -18,10 +18,8 @@ async def consumer(debug=False):
         else:
             try:
                 start = time.time()
-                m = MovieParse()
-                await m.get_movie()
-                await m.get_info()
-                res = m.save()
+                m = MovieParse(redis=redis)
+                res = await m.get_movie()
                 end = time.time()
                 if res is not None:
                     print(res + "，共花费{}秒".format(round(end - start, 2)))
@@ -40,7 +38,7 @@ async def producer(debug=False, threads=1):
         else:
             try:
                 start = time.time()
-                t = TypeList()
+                t = TypeList(redis=redis)
                 res = await t.get_tpye_list()
                 end = time.time()
                 print(res + "，共花费{}秒".format(round(end - start, 2)))

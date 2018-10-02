@@ -13,9 +13,9 @@ import spider.page as page
 
 
 class TypeList:
-    def __init__(self, tag="", range="0,10", sort='S'):
+    def __init__(self, tag="", range="0,10", sort='S', redis=RedisHelper()):
         # 豆瓣搜索页参数列表
-        self.redis = RedisHelper()
+        self.redis = redis
         self.tag = tag
         self.range = range
         self.sort = sort
@@ -50,7 +50,6 @@ class TypeList:
         import spider.page as page
         text = await page.download('https://movie.douban.com/j/new_search_subjects', param=self.get_params())
         pages = json.loads(text)['data']
-        print(pages)
         if len(pages) == 0:
             self.start = 0
             self.genres += 1
@@ -64,16 +63,14 @@ class TypeList:
 
 
 class MovieParse:
-    def __init__(self):
-        self.redis = RedisHelper()
-        self.session = DbHelper.get_session()
+    def __init__(self, redis=RedisHelper()):
+        self.redis = redis
         self.url = str(self.redis.set_randmember("pages"))[2:-1]
         self.movie = None
 
     async def get_movie(self):
         self.redis.set_rem("page", self.url)
         id = self.url.split("/")[-2]
-        print(self.url)
         self.movie = Movie(id=int(id))
         if self.movie.query():
             return
@@ -89,6 +86,10 @@ class MovieParse:
         self.movie.douban_rating = subject_json['rating']['average']
         self.movie.douban_votes = subject_json['ratings_count']
         self.movie.polt = subject_json['summary']
+
+        await self.get_info()
+        self.movie.save()
+        return "得到了《{}》的基本数据".format(self.movie.name)
 
     async def get_info(self):
         html = await page.download(self.url)
@@ -111,7 +112,3 @@ class MovieParse:
             for x_tag in tags:
                 tag = Tag(name=x_tag)
                 self.movie.append_tag(tag)
-
-    def save(self):
-        self.movie.save()
-        return "得到了《{}》的基本数据".format(self.movie.name)
