@@ -1,0 +1,25 @@
+# -*- coding: utf-8 -*-
+# @Time    : 2018/10/1 11:23
+# @Author  : Amadeus
+# @Desc : 用来下载页面
+from aiohttp import ClientSession
+
+from spider import spider_config
+from util import proxy
+
+
+async def download(url, param=None):
+    while True:
+        proxies = proxy.get_proxy()
+        try:
+            async with ClientSession(cookies=spider_config.get_cookie(), headers=spider_config.get_header()) as session:
+                async with session.get(url, params=param,
+                                       proxy="http://{}:{}".format(proxies[0], proxies[1]),
+                                       timeout=10) as r:
+                    text = await r.text()
+                    if r.status == 404:
+                        return
+                    assert r.status == 200
+                    return text
+        except Exception:
+            continue

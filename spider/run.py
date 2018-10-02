@@ -1,11 +1,10 @@
-import multiprocessing, sys
+import concurrent
 
 import asyncio
 import time
 import traceback
 from aiohttp.client_exceptions import ClientResponseError, ClientOSError, ServerDisconnectedError, ClientPayloadError
 from sql.redisHelper import RedisHelper
-from IPProxyPool.IPProxy import Proxy_Pool_Start
 from spider.spider import Spider
 from sql.dbHelper import DBSession
 from concurrent.futures._base import TimeoutError
@@ -28,6 +27,7 @@ def run():
 
 
 async def consumer(debug=False):
+    session = DBSession()
     spider = Spider(session)
     while True:
         res = redis.randomkey()
@@ -39,14 +39,17 @@ async def consumer(debug=False):
                 start = time.time()
                 res = await spider.get_subject()
                 end = time.time()
-                print(res + "，共花费{}秒".format(round(end - start, 2)))
+                if res is not None:
+                    print(res + "，共花费{}秒".format(round(end - start, 2)))
             except Exception:
                 if debug:
                     spider.get_proxy()
                     traceback.print_exc()
+    del spider
 
 
 async def producer(debug=False, threads=1):
+    session = DBSession()
     spider = Spider(session)
     while True:
         res = redis.dbsize()
@@ -72,6 +75,8 @@ def run_thread(max_thread=1, debug=False):
     for x in range(max_thread):
         asyncio.ensure_future(consumer(debug))
     loop = asyncio.get_event_loop()
+    executor = concurrent.futures.ThreadPoolExecutor(5)
+    loop.set_default_executor(executor)
     try:
         loop.run_forever()
     except KeyboardInterrupt as e:
@@ -85,6 +90,5 @@ def run_thread(max_thread=1, debug=False):
 
 
 redis = RedisHelper()
-session = DBSession()
 if __name__ == "__main__":
-    run_thread(max_thread=10)
+    run_thread(max_thread=10, debug=True)

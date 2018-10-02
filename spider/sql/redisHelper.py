@@ -12,6 +12,9 @@ class RedisHelper:
     def set(self, key, value):
         return self.redis.setnx(key, value)
 
+    def exists(self, key):
+        return self.redis.exists(key)
+
     def mset(self, dict):
         return self.redis.mset(map)
 
@@ -27,17 +30,37 @@ class RedisHelper:
     def dbsize(self):
         return self.redis.dbsize()
 
+    def lpush(self, key, value):
+        return self.redis.lpush(key, value)
+
+    def lpop(self, key):
+        return self.redis.lpop(key)
+
+    def lget(self, key):
+        return self.redis.lrange(key, 0, 0)
+
     def getall(self):
         return self.redis.keys()
+
+    def set_add(self, key, value):
+        return self.redis.sadd(key, value)
+
+    def set_randmember(self, key):
+        return self.redis.srandmember(key)
+
+    def set_rem(self, key, value):
+        return self.redis.srem(key, value)
 
 
 if __name__ == "__main__":
     redis = RedisHelper()
-    storage = 0
-    print("当前还有{}条数据等待存储".format(redis.dbsize()))
-    while True:
-        size = redis.dbsize()
-        if storage != size:
-            storage = size
-            print("当前还有{}条数据等待存储".format(size)) #, redis.getall()))
-        time.sleep(1)
+    redis.set("a", "1")
+    print(str(redis.get("a"))[2:-1])
+    # storage = 0
+    # print("当前还有{}条数据等待存储".format(redis.dbsize()))
+    # while True:
+    #     size = redis.dbsize()
+    #     if storage != size:
+    #         storage = size
+    #         print("当前还有{}条数据等待存储".format(size)) #, redis.getall()))
+    #     time.sleep(1)
