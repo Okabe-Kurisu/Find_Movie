@@ -15,11 +15,12 @@ async def download(url, param=None):
             async with ClientSession(cookies=spider_config.get_cookie(), headers=spider_config.get_header()) as session:
                 async with session.get(url, params=param,
                                        proxy="http://{}:{}".format(proxies[0], proxies[1]),
-                                       timeout=10) as r:
+                                       timeout=3) as r:
                     text = await r.text()
                     if r.status == 404:
                         return
                     assert r.status == 200
                     return text
         except Exception:
+            proxy.bad_proxy(proxies)
             continue

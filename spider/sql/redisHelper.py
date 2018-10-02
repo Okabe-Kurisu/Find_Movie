@@ -9,8 +9,11 @@ class RedisHelper:
         redis = StrictRedis(connection_pool=pool)
         self.redis = redis
 
+    def flush(self):
+        return self.redis.flushall()
+
     def set(self, key, value):
-        return self.redis.setnx(key, value)
+        return self.redis.set(key, value)
 
     def exists(self, key):
         return self.redis.exists(key)

@@ -7,7 +7,7 @@ import json
 from lxml import etree
 
 import spider.spider_config as config
-from sql.dbHelper import DbHelper, Movie, Tag, Filmman
+from sql.dbHelper import Movie, Tag, Filmman
 from sql.redisHelper import RedisHelper
 import spider.page as page
 
@@ -54,9 +54,9 @@ class TypeList:
             self.start = 0
             self.genres += 1
             return "分类{}已经获取完成".format(self.get_params()['genres'])
+        self.save_progress(len(pages))  # 存储进度
         for page in pages:
             self.redis.set_add("pages", page['url'])
-        self.save_progress(len(pages))  # 存储进度
         return "得到了{}分类的第{}页, 共{}个数据".format(self.get_params()['genres'],
                                              int(self.get_params()['start'] / 20),
                                              len(pages))
@@ -67,15 +67,17 @@ class MovieParse:
         self.redis = redis
         self.url = str(self.redis.set_randmember("pages"))[2:-1]
         self.movie = None
+        self.redis.set_rem("pages", self.url)
 
     async def get_movie(self):
-        self.redis.set_rem("page", self.url)
         id = self.url.split("/")[-2]
         self.movie = Movie(id=int(id))
         if self.movie.query():
             return
         html = await page.download('https://api.douban.com/v2/movie/subject/' + id)
         if not html:
+            return
+        if self.movie.query():
             return
         subject_json = json.loads(html)
         self.movie.name = subject_json['title']
@@ -88,6 +90,8 @@ class MovieParse:
         self.movie.polt = subject_json['summary']
 
         await self.get_info()
+        if self.movie.query():
+            return
         self.movie.save()
         return "得到了《{}》的基本数据".format(self.movie.name)
 

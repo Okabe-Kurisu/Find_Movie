@@ -36,8 +36,8 @@ class Movie(Base):  # 电影表，记录电影的各种信息
     __tablename__ = 'movie'
     id = Column(Integer, primary_key=True, autoincrement=True)  # 豆瓣id就是唯一id
     imdb_id = Column(String(10))
-    name = Column(String(120), nullable=True)
-    original_name = Column(String(120))  # 非中文名
+    name = Column(String(100), nullable=True)
+    original_name = Column(String(150))  # 非中文名
     poster = Column(String(150), default='no pic')  # 海报地址
     released = Column(String(10))  # 发行年份
     country = Column(String(200))  # 制片国家
@@ -110,7 +110,7 @@ class Filmman_movie(Base):
 class Filmman(Base):
     __tablename__ = 'filmman'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(50), nullable=True)
+    name = Column(String(100), nullable=True)
     name_en = Column(String(150))
     aka = Column(String(20))
     aka_en = Column(String(50))

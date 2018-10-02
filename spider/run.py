@@ -4,6 +4,8 @@ import asyncio
 import time
 import traceback
 from aiohttp.client_exceptions import ClientResponseError, ClientOSError, ServerDisconnectedError, ClientPayloadError
+
+from sql.dbHelper import DbHelper
 from sql.redisHelper import RedisHelper
 from spider.spider import TypeList, MovieParse
 from concurrent.futures._base import TimeoutError
@@ -13,7 +15,7 @@ async def consumer(debug=False):
     while True:
         res = redis.set_size("pages")
         if not res:
-            await asyncio.sleep(3)
+            await asyncio.sleep(1)
             continue
         else:
             try:
@@ -24,11 +26,10 @@ async def consumer(debug=False):
                 if res is not None:
                     print(res + "，共花费{}秒".format(round(end - start, 2)))
             except Exception:
-                if debug:
-                    traceback.print_exc()
+                traceback.print_exc()
 
 
-async def producer(debug=False, threads=1):
+async def producer(threads=1):
     while True:
         res = redis.set_size("pages")
         preload = (int(threads / 20) + 1) * 20
@@ -43,13 +44,12 @@ async def producer(debug=False, threads=1):
                 end = time.time()
                 print(res + "，共花费{}秒".format(round(end - start, 2)))
             except Exception:
-                if debug:
-                    traceback.print_exc()
+                traceback.print_exc()
 
 
 def run_thread(max_thread=1, debug=False):
     # asyncio.ensure_future(status())
-    asyncio.ensure_future(producer(debug=debug, threads=max_thread))
+    asyncio.ensure_future(producer(threads=max_thread))
     for x in range(max_thread):
         asyncio.ensure_future(consumer(debug))
     loop = asyncio.get_event_loop()
@@ -65,6 +65,13 @@ def run_thread(max_thread=1, debug=False):
         traceback.print_exc()
     finally:
         loop.close()
+
+
+def clean():
+    redis.flush()
+    d = DbHelper()
+    d.drop_DB()
+    d.init_DB()
 
 
 redis = RedisHelper()
