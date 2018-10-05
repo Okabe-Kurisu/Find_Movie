@@ -47,7 +47,7 @@ class TypeList:
         }
         return params
 
-    async def get_tpye_list(self):
+    async def get_type_list(self):
         import spider.page as page
         text = await page.download('https://movie.douban.com/j/new_search_subjects', param=self.get_params())
         pages = json.loads(text)['data']

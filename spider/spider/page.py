@@ -5,8 +5,7 @@
 import asyncio
 from aiohttp import ClientSession
 
-from spider import spider_config
-from util import proxy
+from spider import spider_config, proxy
 
 
 async def download(url, param=None):

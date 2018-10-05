@@ -39,7 +39,7 @@ async def producer(threads=1):
             try:
                 start = time.time()
                 t = TypeList(redis=redis)
-                res = await t.get_tpye_list()
+                res = await t.get_type_list()
                 end = time.time()
                 print(res + "，共花费{}秒".format(round(end - start, 2)))
             except Exception:
