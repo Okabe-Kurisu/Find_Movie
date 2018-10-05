@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-from sqlalchemy.orm import sessionmaker, relationship, mapper
+from sqlalchemy.orm import sessionmaker, relationship
 import config
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import create_engine, Table
-from sqlalchemy import Column, String, Integer, Text, Float, ForeignKey
+from sqlalchemy import create_engine, VARCHAR, Column, VARCHAR, Integer, Text, Float, ForeignKey
 import traceback
 
 Base = declarative_base()
@@ -35,14 +34,14 @@ class DbHelper:
 class Movie(Base):  # 电影表，记录电影的各种信息
     __tablename__ = 'movie'
     id = Column(Integer, primary_key=True, autoincrement=True)  # 豆瓣id就是唯一id
-    imdb_id = Column(String(10))
-    name = Column(String(150), nullable=True)
-    original_name = Column(String(250))  # 非中文名
-    poster = Column(String(150), default='no pic')  # 海报地址
-    released = Column(String(10))  # 发行年份
-    country = Column(String(200))  # 制片国家
-    runtime = Column(String(5))  # 电影时长 omdb获得
-    language = Column(String(70))  # 发行语言 omdb获得
+    imdb_id = Column(VARCHAR(10))
+    name = Column(VARCHAR(150), nullable=True)
+    original_name = Column(VARCHAR(250))  # 非中文名
+    poster = Column(VARCHAR(150), default='no pic')  # 海报地址
+    released = Column(Integer, default=0)  # 发行年份
+    country = Column(VARCHAR(200))  # 制片国家
+    runtime = Column(VARCHAR(5))  # 电影时长 omdb获得
+    language = Column(VARCHAR(70))  # 发行语言 omdb获得
     douban_rating = Column(Float)
     douban_votes = Column(Integer)  # 豆瓣评分人数
     imdb_rating = Column(Float)  # omdb获得
@@ -57,17 +56,19 @@ class Movie(Base):  # 电影表，记录电影的各种信息
     session = DbHelper.get_session()
 
     def save(self):
-        temp = self.query()
-        if not temp:
+        if self.id:
             self.session.merge(self)
             return self
-        return temp
+        temp = self.query()
+        if temp:
+            self.session.add(self)
+        return self.query()
 
     def query(self):  # 检查是否重复保存了数据
         query = self.session.query(Movie)
         if self.id:
             query = query.filter(Movie.id == self.id)
-        return query.first()
+        return query.all()
 
     def query_all_filmmaker(self):
         filmmans = self.session.query(Movie).filter(Movie.id == self.id).first().filmmans
@@ -80,12 +81,14 @@ class Movie(Base):  # 电影表，记录电影的各种信息
     def append_filmman(self, filmman, role):
         filmman = filmman.save()
         fm = Filmman_movie(fid=filmman.id, mid=self.id, role=role)
-        fm.save()
+        if not fm.query_by_fidmid():
+            fm.save()
 
     def append_tag(self, tag):
         tag = tag.save()
         tm = Tag_movie(tid=tag.id, mid=self.id)
-        tm.save()
+        if not tm.query_by_tidmid():
+            tm.save()
 
 
 # 影人与电影关系
@@ -98,7 +101,8 @@ class Filmman_movie(Base):
     session = DbHelper.get_session()
 
     def save(self):
-        self.session.merge(self)
+        self.session.add(self)
+        return self
 
     def query_by_fidmid(self):
         fm = self.session.query(Filmman_movie) \
@@ -110,14 +114,14 @@ class Filmman_movie(Base):
 class Filmman(Base):
     __tablename__ = 'filmman'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(150), nullable=True)
-    name_en = Column(String(150))
-    aka = Column(String(20))
-    aka_en = Column(String(50))
-    born_date = Column(String(10))
-    born_place = Column(String(20))
-    job = Column(String(20))
-    avatar = Column(String(100))
+    name = Column(VARCHAR(150), nullable=True)
+    name_en = Column(VARCHAR(150))
+    aka = Column(VARCHAR(20))
+    aka_en = Column(VARCHAR(50))
+    born_date = Column(VARCHAR(10))
+    born_place = Column(VARCHAR(20))
+    job = Column(VARCHAR(20))
+    avatar = Column(VARCHAR(100))
     session = DbHelper.get_session()
 
     ROLE_DIRECTOR = 1
@@ -125,10 +129,12 @@ class Filmman(Base):
     ROLE_WRITER = 100
 
     def save(self):
+        if self.id:
+            self.session.merge(self)
+            return self
         temp = self.query()
         if temp:
-            return temp
-        self.session.merge(self)
+            self.session.add(self)
         return self.query()
 
     def query(self):
@@ -154,7 +160,8 @@ class Tag_movie(Base):
     session = DbHelper.get_session()
 
     def save(self):
-        self.session.merge(self)
+        self.session.add(self)
+        return self
 
     def query_by_tidmid(self):
         tm = self.session.query(Filmman_movie) \
@@ -166,14 +173,16 @@ class Tag_movie(Base):
 class Tag(Base):
     __tablename__ = 'tag'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(50), nullable=True, unique=True)
+    name = Column(VARCHAR(50), nullable=True, unique=True)
     session = DbHelper.get_session()
 
     def save(self):
+        if self.id:
+            self.session.merge(self)
+            return self
         temp = self.query()
         if temp:
-            return temp
-        self.session.merge(self)
+            self.session.add(self)
         return self.query()
 
     def query(self):
@@ -193,3 +202,4 @@ class Tag(Base):
 if __name__ == "__main__":
     d = DbHelper()
     d.init_DB()
+

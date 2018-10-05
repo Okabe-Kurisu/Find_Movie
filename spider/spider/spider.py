@@ -74,13 +74,13 @@ class MovieParse:
     async def get_movie(self):
         id = self.url.split("/")[-2]
         self.movie = Movie(id=int(id))
-        if self.movie.query():
+        old_version = self.movie.query()
+        # 太老的电影数据应该不会有太大变动，更新时自动跳过就好
+        if old_version and old_version.release and old_version.release < 2010:
             return "电影《{}》已经存在".format(self.movie.query().name)
         html = await page.download('https://api.douban.com/v2/movie/subject/' + id)
         if not html:
             return "电影《{}》下载失败".format(self.movie.name)
-        if self.movie.query():
-            return "电影《{}》已经存在".format(self.movie.name)
         try:
             subject_json = json.loads(html)
             self.movie.name = subject_json['title']
