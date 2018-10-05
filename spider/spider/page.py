@@ -2,6 +2,7 @@
 # @Time    : 2018/10/1 11:23
 # @Author  : Amadeus
 # @Desc : 用来下载页面
+import asyncio
 from aiohttp import ClientSession
 
 from spider import spider_config
@@ -20,6 +21,8 @@ async def download(url, param=None):
                     if r.status == 404:
                         return
                     assert r.status == 200
+                    await asyncio.sleep(1)
                     return text
         except Exception:
+            proxy.bad_proxy(proxies)
             continue

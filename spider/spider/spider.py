@@ -75,21 +75,19 @@ class MovieParse:
         id = self.url.split("/")[-2]
         self.movie = Movie(id=int(id))
         if self.movie.query():
-            print("电影{}已经存在".format(self.movie.query().name))
-            return
+            return "电影《{}》已经存在".format(self.movie.query().name)
         html = await page.download('https://api.douban.com/v2/movie/subject/' + id)
         if not html:
-            print("电影{}下载失败".format(self.movie.name))
-            return
+            return "电影《{}》下载失败".format(self.movie.name)
         if self.movie.query():
-            print("电影{}已经存在".format(self.movie.name))
-            return
+            return "电影《{}》已经存在".format(self.movie.name)
         try:
             subject_json = json.loads(html)
             self.movie.name = subject_json['title']
             self.movie.original_name = subject_json['original_title']
             self.movie.poster = subject_json['images']['large']
-            self.movie.released = int(subject_json['year']) if subject_json['year'] else 0
+            self.movie.released = int(''.join([x for x in '1997年' if x in "0123456789"])) if subject_json[
+                'year'] else 0
             self.movie.country = str(subject_json['countries'])
             self.movie.douban_rating = subject_json['rating']['average']
             self.movie.douban_votes = subject_json['ratings_count']
@@ -108,15 +106,17 @@ class MovieParse:
 
         directors = html.xpath('//*[@rel="v:directedBy"]/text()')
         if directors:
-            for x_director in directors:
-                filmman = Filmman(name=x_director)
-                self.movie.append_filmman(filmman, Filmman.ROLE_DIRECTOR)
+            for man in directors:
+                for x in man.split(" / "):
+                    filmman = Filmman(name=x)
+                    self.movie.append_filmman(filmman, Filmman.ROLE_DIRECTOR)
 
         actors = html.xpath('//*[@rel="v:starring"]/text()')
         if actors:
-            for x_actor in actors:
-                filmman = Filmman(name=x_actor)
-                self.movie.append_filmman(filmman, Filmman.ROLE_ACTOR)
+            for man in directors:
+                for x in man.split(" / "):
+                    filmman = Filmman(name=x)
+                    self.movie.append_filmman(filmman, Filmman.ROLE_ACTOR)
 
         tags = html.xpath('//*[@class="tags-body"]/a/text()')
         if tags:

@@ -37,7 +37,7 @@ class Movie(Base):  # 电影表，记录电影的各种信息
     id = Column(Integer, primary_key=True, autoincrement=True)  # 豆瓣id就是唯一id
     imdb_id = Column(String(10))
     name = Column(String(150), nullable=True)
-    original_name = Column(String(150))  # 非中文名
+    original_name = Column(String(250))  # 非中文名
     poster = Column(String(150), default='no pic')  # 海报地址
     released = Column(String(10))  # 发行年份
     country = Column(String(200))  # 制片国家
