@@ -14,7 +14,7 @@ import spider.page as page
 
 
 class TypeList:
-    def __init__(self, tag="", range="0,10", sort='S', redis=RedisHelper()):
+    def __init__(self, tag="", range="0,10", sort='R', redis=RedisHelper()):
         # 豆瓣搜索页参数列表
         self.redis = redis
         self.tag = tag
@@ -43,7 +43,7 @@ class TypeList:
             'tags': '电影' + self.tag,
             'start': self.start,
             # 电影类型，具体可见spider_config.py中
-            'genres': config.douban_type[self.genres],
+            # 'genres':  config.douban_type[self.genres],
         }
         return params
 
@@ -59,9 +59,11 @@ class TypeList:
         self.save_progress(len(pages))  # 存储进度
         for page in pages:
             self.redis.set_add("pages", page['url'])
-        return "得到了{}分类的第{}页, 共{}个数据".format(self.get_params()['genres'],
-                                             int(self.get_params()['start'] / 20),
-                                             len(pages))
+        # return "得到了{}分类的第{}页, 共{}个数据".format(self.get_params()['genres'],
+        #                                      int(self.get_params()['start'] / 20),
+        #                                      len(pages))
+        return "得到了第{}页, 共{}个数据".format(int(self.get_params()['start'] / 20),
+                                        len(pages))
 
 
 class MovieParse:
@@ -76,8 +78,8 @@ class MovieParse:
         self.movie = Movie(id=int(id))
         old_version = self.movie.query()
         # 太老的电影数据应该不会有太大变动，更新时自动跳过就好
-        if old_version and old_version.release and old_version.release < 2010:
-            return "电影《{}》已经存在".format(self.movie.query().name)
+        if old_version and old_version[0].released and old_version[0].released < 2010:
+            return "电影《{}》已经存在".format(old_version[0].name)
         html = await page.download('https://api.douban.com/v2/movie/subject/' + id)
         if not html:
             return "电影《{}》下载失败".format(self.movie.name)

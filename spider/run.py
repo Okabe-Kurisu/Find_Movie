@@ -3,7 +3,6 @@ import concurrent
 import asyncio
 import time
 import traceback
-from sql.dbHelper import DbHelper
 from sql.redisHelper import RedisHelper
 from spider.spider import TypeList, MovieParse
 from concurrent.futures._base import TimeoutError
@@ -68,7 +67,7 @@ def clean():
 
 redis = RedisHelper()
 if __name__ == "__main__":
-    start = int(redis.get("start"))
+    # start = int(redis.get("start"))
     # redis.set("start", start - 200)
     clean()
     run_thread(max_thread=40)

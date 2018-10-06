@@ -60,7 +60,7 @@ class Movie(Base):  # 电影表，记录电影的各种信息
             self.session.merge(self)
             return self
         temp = self.query()
-        if temp:
+        if not temp:
             self.session.add(self)
         return self.query()
 
@@ -133,7 +133,7 @@ class Filmman(Base):
             self.session.merge(self)
             return self
         temp = self.query()
-        if temp:
+        if not temp:
             self.session.add(self)
         return self.query()
 
@@ -181,7 +181,7 @@ class Tag(Base):
             self.session.merge(self)
             return self
         temp = self.query()
-        if temp:
+        if not temp:
             self.session.add(self)
         return self.query()
 
