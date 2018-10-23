@@ -1,6 +1,6 @@
 import traceback
 
-from sql.dbHelper import DBSession, Movie, Filmman, Tag
+from sqlHelper.db import DBSession, Movie, Filmman, Tag
 
 if __name__ == "__main__":
     session = DBSession()

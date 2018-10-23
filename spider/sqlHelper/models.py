@@ -1,41 +1,21 @@
 # -*- coding: utf-8 -*-
-from sqlalchemy.orm import sessionmaker, relationship
-import config
+# @Time    : 2018/10/7 18:56
+# @Author  : Amadeus
+# @Desc :
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import create_engine, VARCHAR, Column, VARCHAR, Integer, Text, Float, ForeignKey
-import traceback
+from sqlalchemy import Column, VARCHAR, Integer, Text, Float, ForeignKey
+from sqlalchemy.orm import relationship
+
+from sqlHelper.db import db as db
 
 Base = declarative_base()
-
-
-class DbHelper:
-    def __init__(self):
-        conn_url = 'mysql+pymysql://' + config.mysql_username + ':' + config.mysql_passwd + '@' + config.mysql_host + '/' + \
-                   config.mysql_dbname
-        self.engine = create_engine(conn_url, pool_size=100, echo=False, pool_recycle=5 * 60)
-        db_session = sessionmaker(bind=self.engine)
-        self.session = db_session()
-
-    def init_DB(self):
-        Base.metadata.create_all(self.engine)
-
-    def drop_DB(self):
-        Base.metadata.drop_all(self.engine)
-
-    @staticmethod
-    def get_session():
-        conn_url = 'mysql+pymysql://' + config.mysql_username + ':' + config.mysql_passwd + '@' + config.mysql_host + '/' + \
-                   config.mysql_dbname
-        engine = create_engine(conn_url, pool_size=100, echo=False, pool_recycle=5 * 60)
-        db_session = sessionmaker(bind=engine)
-        return db_session()
 
 
 class Movie(Base):  # 电影表，记录电影的各种信息
     __tablename__ = 'movie'
     id = Column(Integer, primary_key=True, autoincrement=True)  # 豆瓣id就是唯一id
     imdb_id = Column(VARCHAR(10))
-    name = Column(VARCHAR(150), nullable=True)
+    name = Column(VARCHAR(250), nullable=True)
     original_name = Column(VARCHAR(250))  # 非中文名
     poster = Column(VARCHAR(150), default='no pic')  # 海报地址
     released = Column(Integer, default=0)  # 发行年份
@@ -53,7 +33,7 @@ class Movie(Base):  # 电影表，记录电影的各种信息
     tags = relationship('Tag'
                         , secondary='tag_movie'
                         , backref='movies')
-    session = DbHelper.get_session()
+    session = db.session
 
     def save(self):
         if self.id:
@@ -98,7 +78,7 @@ class Filmman_movie(Base):
     fid = Column(Integer, ForeignKey('filmman.id'))
     mid = Column(Integer, ForeignKey('movie.id'))
     role = Column(Integer, default=0)
-    session = DbHelper.get_session()
+    session = db.session
 
     def save(self):
         self.session.add(self)
@@ -122,7 +102,7 @@ class Filmman(Base):
     born_place = Column(VARCHAR(20))
     job = Column(VARCHAR(20))
     avatar = Column(VARCHAR(100))
-    session = DbHelper.get_session()
+    session = db.session
 
     ROLE_DIRECTOR = 1
     ROLE_ACTOR = 10
@@ -157,7 +137,7 @@ class Tag_movie(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     tid = Column(Integer, ForeignKey('tag.id'))
     mid = Column(Integer, ForeignKey('movie.id'))
-    session = DbHelper.get_session()
+    session = db.session
 
     def save(self):
         self.session.add(self)
@@ -174,7 +154,7 @@ class Tag(Base):
     __tablename__ = 'tag'
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(VARCHAR(50), nullable=True, unique=True)
-    session = DbHelper.get_session()
+    session = db.session
 
     def save(self):
         if self.id:
@@ -197,9 +177,3 @@ class Tag(Base):
         tag = self.session.query(Tag).filter(Tag.id == self.id).first()
         movies = tag.movies
         return movies
-
-
-if __name__ == "__main__":
-    d = DbHelper()
-    d.init_DB()
-

@@ -1,7 +1,6 @@
 import random
 
 from IPProxyPool.db.DataStore import sqlhelper
-from IPProxyPool.IPProxy import Proxy_Pool_Start
 
 
 # 随便取得一个代理ip

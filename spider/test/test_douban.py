@@ -1,7 +1,7 @@
 import asyncio
 
 from spider.spider import Spider
-from sql.dbHelper import DBSession
+from sqlHelper.db import DBSession
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()

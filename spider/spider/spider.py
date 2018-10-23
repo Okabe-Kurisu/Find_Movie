@@ -7,9 +7,8 @@ import traceback
 
 from lxml import etree
 
-import spider.spider_config as config
-from sql.dbHelper import Movie, Tag, Filmman
-from sql.redisHelper import RedisHelper
+from sqlHelper.models import Movie, Tag, Filmman
+from sqlHelper.redisHelper import RedisHelper
 import spider.page as page
 
 

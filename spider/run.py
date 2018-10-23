@@ -3,7 +3,7 @@ import concurrent
 import asyncio
 import time
 import traceback
-from sql.redisHelper import RedisHelper
+from sqlHelper.redisHelper import RedisHelper
 from spider.spider import TypeList, MovieParse
 from concurrent.futures._base import TimeoutError
 
@@ -46,7 +46,6 @@ async def producer(threads=1):
 
 
 def run_thread(max_thread=1):
-    # asyncio.ensure_future(status())
     asyncio.ensure_future(producer(threads=max_thread))
     for x in range(max_thread):
         asyncio.ensure_future(consumer())

@@ -58,7 +58,7 @@ class RedisHelper:
         return self.redis.scard(key)
 
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
     # redis = RedisHelper()
     # print(redis.set_size("pages"))
     # storage = 0
@@ -69,6 +69,4 @@ if __name__ == "__main__":
     #         storage = size
     #         print("当前还有{}条数据等待存储".format(size)) #, redis.getall()))
     #     time.sleep(1)
-    if __name__ == '__main__':
-        a = int(''.join([x for x in '1997年' if x in "0123456789"]))
-        print(a)
+
